@@ -8,21 +8,21 @@
     <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Source+Code+Pro:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #F5F0E8;
-            --bg2: #FDFAF4;
-            --bg3: #EDE8DC;
-            --bg4: #E4DDD0;
-            --border: #C8BFA8;
-            --text: #2C2418;
-            --text2: #5A4E3A;
-            --text3: #8A7A60;
-            --accent: #4A8C20;
-            --accent2: #3A7010;
-            --green: #3A7A18;
-            --amber: #A07010;
-            --red: #B04030;
-            --purple: #5A7A30;
-            --teal: #3A8040;
+            --bg: #F0F4F8;
+            --bg2: #F7FAFC;
+            --bg3: #E2E8F0;
+            --bg4: #CBD5E0;
+            --border: #A0AEC0;
+            --text: #1A202C;
+            --text2: #4A5568;
+            --text3: #718096;
+            --accent: #3182CE;
+            --accent2: #2C5282;
+            --blue: #2B6CB0;
+            --cyan: #38B2AC;
+            --indigo: #5A67D8;
+            --purple: #805AD5;
+            --teal: #319795;
         }
 
         * {
@@ -69,7 +69,7 @@
         .logo-icon {
             width: 36px;
             height: 36px;
-            background: linear-gradient(135deg, #3A7010, #5A9E30);
+            background: linear-gradient(135deg, #2C5282, #4299E1);
             border-radius: 8px;
             display: flex;
             align-items: center;
@@ -90,9 +90,9 @@
         }
 
         .badge {
-            background: rgba(74, 140, 32, 0.12);
+            background: rgba(49, 130, 206, 0.12);
             color: var(--accent2);
-            border: 1px solid rgba(74, 140, 32, 0.3);
+            border: 1px solid rgba(49, 130, 206, 0.3);
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 11px;
@@ -313,7 +313,7 @@
 
         /* Status Banner */
         .status-banner {
-            background: linear-gradient(135deg, var(--accent2), var(--green));
+            background: linear-gradient(135deg, var(--accent2), var(--blue));
             color: white;
             padding: 20px 24px;
             border-radius: 12px;
@@ -345,7 +345,7 @@
             width: 10px;
             height: 10px;
             border-radius: 50%;
-            background: #4ADE80;
+            background: #4299E1;
             animation: pulse 2s infinite;
         }
 
@@ -494,7 +494,7 @@
 
             <div class="card">
                 <div class="card-title">
-                    <span class="card-title-dot" style="background: var(--green)"></span>
+                    <span class="card-title-dot" style="background: var(--blue)"></span>
                     Monthly Solar Irradiance
                 </div>
                 <div id="monthlyChart" class="chart-container"></div>
@@ -502,7 +502,7 @@
 
             <div class="card">
                 <div class="card-title">
-                    <span class="card-title-dot" style="background: var(--amber)"></span>
+                    <span class="card-title-dot" style="background: var(--cyan)"></span>
                     Quick Start Guide
                 </div>
                 <div style="line-height: 1.8;">
@@ -521,7 +521,7 @@
         <div id="optimization" class="page">
             <div class="card">
                 <div class="card-title">
-                    <span class="card-title-dot" style="background: var(--amber)"></span>
+                    <span class="card-title-dot" style="background: var(--cyan)"></span>
                     Load Profile Configuration
                 </div>
                 
@@ -548,7 +548,7 @@
 
             <div class="card">
                 <div class="card-title">
-                    <span class="card-title-dot" style="background: var(--green)"></span>
+                    <span class="card-title-dot" style="background: var(--blue)"></span>
                     System Configuration
                 </div>
 
@@ -579,7 +579,7 @@
 
             <div class="card" id="resultsCard" style="display: none;">
                 <div class="card-title">
-                    <span class="card-title-dot" style="background: var(--accent)"></span>
+                    <span class="card-title-dot" style="background: var(--indigo)"></span>
                     Optimization Results
                 </div>
 
@@ -591,7 +591,7 @@
                     </div>
                     <div class="stat-card">
                         <h3>Status</h3>
-                        <div class="value" id="resultStatus" style="color: var(--green)">Optimal</div>
+                        <div class="value" id="resultStatus" style="color: var(--blue)">Optimal</div>
                         <div class="sub" id="resultTime">0.00s</div>
                     </div>
                     <div class="stat-card">
@@ -614,7 +614,7 @@
         <div id="solar" class="page">
             <div class="card">
                 <div class="card-title">
-                    <span class="card-title-dot" style="background: var(--green)"></span>
+                    <span class="card-title-dot" style="background: var(--blue)"></span>
                     Solar PV Forecast
                 </div>
 
@@ -686,7 +686,7 @@
         <div id="generators" class="page">
             <div class="card">
                 <div class="card-title">
-                    <span class="card-title-dot" style="background: var(--amber)"></span>
+                    <span class="card-title-dot" style="background: var(--cyan)"></span>
                     Generator Fleet
                 </div>
 
@@ -881,7 +881,7 @@
                 const response = await fetch(`${API_BASE}/`);
                 const data = await response.json();
                 document.getElementById('apiStatus').textContent = 'API Connected';
-                document.getElementById('apiStatus').style.color = '#4ADE80';
+                document.getElementById('apiStatus').style.color = '#4299E1';
             } catch (error) {
                 document.getElementById('apiStatus').textContent = 'API Offline';
                 document.getElementById('apiStatus').style.color = '#F87171';
@@ -910,7 +910,7 @@
                             y: ghi,
                             type: 'bar',
                             name: 'GHI',
-                            marker: { color: '#3A7A18' },
+                            marker: { color: '#38B2AC' },
                             yaxis: 'y'
                         },
                         {
@@ -1025,14 +1025,14 @@
                     y: gasOutput,
                     type: 'bar',
                     name: 'Gas Turbine',
-                    marker: { color: '#5A7A30' }
+                    marker: { color: '#5A67D8' }
                 },
                 {
                     x: hours,
                     y: solarOutput,
                     type: 'bar',
                     name: 'Solar PV',
-                    marker: { color: '#3A7A18' }
+                    marker: { color: '#2B6CB0' }
                 },
                 {
                     x: hours,
@@ -1085,7 +1085,7 @@
                             type: 'scatter',
                             mode: 'lines+markers',
                             fill: 'tozeroy',
-                            line: { color: '#3A7A18', width: 3 },
+                            line: { color: '#2B6CB0', width: 3 },
                             marker: { size: 6 },
                             name: 'Generation'
                         },
