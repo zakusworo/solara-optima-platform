@@ -41,8 +41,8 @@ class Settings(BaseSettings):
     
     # Ollama AI
     OLLAMA_HOST: str = "http://localhost:11434"
-    OLLAMA_MODEL: str = "llama3.2"
-    FORECAST_MODEL: str = "mistral"
+    OLLAMA_MODEL: str = "qwen3.5"
+    FORECAST_MODEL: str = "qwen3.5"
     
     # Optimization
     SOLVER_NAME: str = "cbc"  # Options: cbc, glpk, gurobi, cplex
