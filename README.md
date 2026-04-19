@@ -97,9 +97,8 @@ npm run dev
 
 ### Ollama Setup
 ```bash
-# Install forecasting models
-ollama pull llama3.2
-ollama pull mistral
+# Install forecasting model
+ollama pull qwen3.5
 ```
 
 ## Configuration

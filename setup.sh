@@ -67,7 +67,7 @@ else
     
     # Pull models if not present
     echo "Pulling AI models for forecasting..."
-    ollama pull llama3.2 || echo "Model pull failed, will retry later"
+    ollama pull qwen3.5 || echo "Model pull failed, will retry later"
 fi
 
 echo ""

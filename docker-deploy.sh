@@ -79,7 +79,7 @@ case $ACTION in
         ;;
     
     "ollama-pull")
-        MODEL=${2:-"llama3.2"}
+        MODEL=${2:-"qwen3.5"}
         echo -e "${YELLOW}Pulling Ollama model: $MODEL${NC}"
         docker exec solar-uc-ed-ollama ollama pull $MODEL
         echo -e "${GREEN}✓ Model pulled${NC}"
@@ -102,7 +102,7 @@ case $ACTION in
         echo "  logs [svc]    View logs (optionally filter by service)"
         echo "  build         Rebuild containers"
         echo "  status        Show service status"
-        echo "  ollama-pull   Pull Ollama model (default: llama3.2)"
+        echo "  ollama-pull   Pull Ollama model (default: qwen3.5)"
         echo "  clean         Remove containers and volumes"
         echo ""
         ;;
