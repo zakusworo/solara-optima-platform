@@ -219,7 +219,7 @@ Consider saving this project structure as a skill for future renewable energy pr
 Politeknik Energi dan Pertambangan Bandung  
 Email: greataji13@gmail.com  
 GitHub: zakusworo  
-DOI: 10.5281/zenodo.19650332
+DOI: 10.5281/zenodo.19653510
 
 ## License
 

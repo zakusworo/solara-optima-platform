@@ -146,4 +146,4 @@ MIT License
 Zulfikar Aji Kusworo  
 GitHub: [@zakusworo](https://github.com/zakusworo)  
 Email: greataji13@gmail.com  
-DOI: 10.5281/zenodo.19650332
+DOI: 10.5281/zenodo.19653510

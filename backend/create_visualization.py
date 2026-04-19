@@ -176,7 +176,7 @@ html_content = f"""<!DOCTYPE html>
 
         <div class="footer">
             <p><strong>Solar UC/ED Platform v1.0.0</strong></p>
-            <p>Politeknik Energi dan Pertambangan Bandung | DOI: 10.5281/zenodo.19650332</p>
+            <p>DOI: 10.5281/zenodo.19653510</p>
             <p>Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
         </div>
     </div>
