@@ -131,6 +131,12 @@ market:
 - `POST /api/v1/generators` - Manage generator fleet
 - `GET /api/v1/results/{job_id}` - Retrieve optimization results
 
+## Screenshot
+
+![Dashboard Screenshot](docs/screenshot-dashboard.png)
+
+*Solara Optima Platform Dashboard - Blue-themed UI showing monthly solar irradiance, key metrics, and navigation tabs*
+
 ## License
 
 MIT License
@@ -138,5 +144,6 @@ MIT License
 ## Author
 
 Zulfikar Aji Kusworo  
-Politeknik Energi dan Pertambangan Bandung  
+GitHub: [@zakusworo](https://github.com/zakusworo)  
+Email: greataji13@gmail.com  
 DOI: 10.5281/zenodo.19650332
