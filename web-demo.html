@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solara Optima - Web Demo</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Source+Code+Pro:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #F5F0E8;
+            --bg2: #FDFAF4;
+            --bg3: #EDE8DC;
+            --bg4: #E4DDD0;
+            --border: #C8BFA8;
+            --text: #2C2418;
+            --text2: #5A4E3A;
+            --text3: #8A7A60;
+            --accent: #4A8C20;
+            --accent2: #3A7010;
+            --green: #3A7A18;
+            --amber: #A07010;
+            --red: #B04030;
+            --purple: #5A7A30;
+            --teal: #3A8040;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Lora', serif;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 14px;
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        .font-mono {
+            font-family: 'Source Code Pro', monospace;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg3);
+            border-bottom: 1px solid var(--border);
+            padding: 0 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #3A7010, #5A9E30);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-text {
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+        }
+
+        .logo-sub {
+            font-size: 11px;
+            color: var(--text3);
+            font-family: var(--font-mono);
+            margin-top: 1px;
+        }
+
+        .badge {
+            background: rgba(74, 140, 32, 0.12);
+            color: var(--accent2);
+            border: 1px solid rgba(74, 140, 32, 0.3);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-family: 'Source Code Pro', monospace;
+            font-weight: 500;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tab {
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            color: var(--text2);
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+            transition: all 0.15s;
+            font-family: 'Lora', serif;
+        }
+
+        .tab:hover {
+            color: var(--text);
+        }
+
+        .tab.active {
+            color: var(--accent2);
+            border-bottom-color: var(--accent2);
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .stat-card h3 {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--text3);
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-card .value {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--accent2);
+        }
+
+        .stat-card .sub {
+            font-size: 12px;
+            color: var(--text3);
+            margin-top: 4px;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: var(--text2);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Source Code Pro', monospace;
+            background: var(--bg2);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(74, 140, 32, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--accent2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2D6010;
+        }
+
+        .btn-secondary {
+            background: var(--bg3);
+            color: var(--text2);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Charts */
+        .chart-container {
+            height: 400px;
+            margin-top: 20px;
+        }
+
+        /* Load Profile Input */
+        .load-input-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .load-input-item {
+            position: relative;
+        }
+
+        .load-input-item label {
+            font-size: 10px;
+            color: var(--text3);
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .load-input-item input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 12px;
+            font-family: 'Source Code Pro', monospace;
+            text-align: center;
+        }
+
+        .load-input-item input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        /* Status Banner */
+        .status-banner {
+            background: linear-gradient(135deg, var(--accent2), var(--green));
+            color: white;
+            padding: 20px 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .status-banner h2 {
+            font-size: 18px;
+            margin-bottom: 4px;
+        }
+
+        .status-banner p {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-family: 'Source Code Pro', monospace;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4ADE80;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Page Sections */
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Generator Cards */
+        .generator-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+        }
+
+        .generator-card {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+        }
+
+        .generator-card h4 {
+            font-size: 14px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .generator-specs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .generator-spec {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .generator-spec label {
+            color: var(--text3);
+        }
+
+        .generator-spec span {
+            font-family: 'Source Code Pro', monospace;
+            font-weight: 500;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text3);
+            font-size: 12px;
+            border-top: 1px solid var(--border);
+            margin-top: 40px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">☀️</div>
+            <div>
+                <div class="logo-text">Solara Optima Platform</div>
+                <div class="logo-sub font-mono">Bandung, Indonesia</div>
+            </div>
+        </div>
+        <div class="badge font-mono">MILP Optimizer</div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Status Banner -->
+        <div class="status-banner">
+            <div>
+                <h2>Unit Commitment & Economic Dispatch</h2>
+                <p>Optimize generator dispatch with solar PV and battery storage integration</p>
+            </div>
+            <div class="status-indicator">
+                <div class="status-dot"></div>
+                <span id="apiStatus">API Connected</span>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('dashboard')">📊 Dashboard</button>
+            <button class="tab" onclick="switchTab('optimization')">⚙️ Optimization</button>
+            <button class="tab" onclick="switchTab('solar')">☀️ Solar Forecast</button>
+            <button class="tab" onclick="switchTab('generators')">⚡ Generators</button>
+        </div>
+
+        <!-- Dashboard Page -->
+        <div id="dashboard" class="page active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Solar Resource</h3>
+                    <div class="value" id="statSolar">1,650</div>
+                    <div class="sub">kWh/m²/year</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Optimal Tilt</h3>
+                    <div class="value" id="statTilt">8.4°</div>
+                    <div class="sub">latitude-based</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Capacity Factor</h3>
+                    <div class="value" id="statCF">16%</div>
+                    <div class="sub">tropical estimate</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Azimuth</h3>
+                    <div class="value" id="statAzimuth">0°</div>
+                    <div class="sub">North-facing</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <span class="card-title-dot" style="background: var(--green)"></span>
+                    Monthly Solar Irradiance
+                </div>
+                <div id="monthlyChart" class="chart-container"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <span class="card-title-dot" style="background: var(--amber)"></span>
+                    Quick Start Guide
+                </div>
+                <div style="line-height: 1.8;">
+                    <ol style="margin-left: 20px; margin-top: 12px;">
+                        <li><strong>Configure Load Profile</strong> - Enter hourly load demand or use sample data</li>
+                        <li><strong>Select Generators</strong> - Choose from Indonesian market presets or add custom</li>
+                        <li><strong>Add Solar PV</strong> - System capacity auto-optimized for Bandung location</li>
+                        <li><strong>Run Optimization</strong> - MILP solver finds optimal dispatch in seconds</li>
+                        <li><strong>Review Results</strong> - Analyze costs, generation stack, and emissions</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <!-- Optimization Page -->
+        <div id="optimization" class="page">
+            <div class="card">
+                <div class="card-title">
+                    <span class="card-title-dot" style="background: var(--amber)"></span>
+                    Load Profile Configuration
+                </div>
+                
+                <div class="form-row" style="margin-bottom: 16px;">
+                    <div class="form-group">
+                        <label>Profile Type</label>
+                        <select class="form-control" id="loadProfileType" onchange="loadSampleLoad()">
+                            <option value="commercial">Commercial Building</option>
+                            <option value="residential">Residential</option>
+                            <option value="industrial">Industrial</option>
+                            <option value="custom">Custom Input</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Peak Load (kW)</label>
+                        <input type="number" class="form-control" id="peakLoad" value="170" onchange="updateLoadProfile()">
+                    </div>
+                </div>
+
+                <div class="load-input-grid" id="loadInputs">
+                    <!-- Generated by JS -->
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <span class="card-title-dot" style="background: var(--green)"></span>
+                    System Configuration
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>PV Capacity (kW)</label>
+                        <input type="number" class="form-control" id="pvCapacity" value="100">
+                    </div>
+                    <div class="form-group">
+                        <label>Battery Capacity (kWh)</label>
+                        <input type="number" class="form-control" id="bessCapacity" value="50">
+                    </div>
+                    <div class="form-group">
+                        <label>Battery Power (kW)</label>
+                        <input type="number" class="form-control" id="bessPower" value="25">
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <button class="btn btn-primary" onclick="runOptimization()" id="runBtn">
+                        ▶ Run Optimization
+                    </button>
+                    <button class="btn btn-secondary" onclick="loadSampleLoad()" style="margin-left: 12px;">
+                        💡 Load Sample Data
+                    </button>
+                </div>
+            </div>
+
+            <div class="card" id="resultsCard" style="display: none;">
+                <div class="card-title">
+                    <span class="card-title-dot" style="background: var(--accent)"></span>
+                    Optimization Results
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Total Cost</h3>
+                        <div class="value" id="resultCost">Rp 0</div>
+                        <div class="sub" id="resultCostUSD">~$0 USD</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Status</h3>
+                        <div class="value" id="resultStatus" style="color: var(--green)">Optimal</div>
+                        <div class="sub" id="resultTime">0.00s</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Solar Generation</h3>
+                        <div class="value" id="resultSolar">0 kWh</div>
+                        <div class="sub" id="resultSolarPeak">Peak: 0 kW</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Load Served</h3>
+                        <div class="value" id="resultLoad">0 kWh</div>
+                        <div class="sub" id="resultLoadPeak">Peak: 0 kW</div>
+                    </div>
+                </div>
+
+                <div id="stackChart" class="chart-container"></div>
+            </div>
+        </div>
+
+        <!-- Solar Forecast Page -->
+        <div id="solar" class="page">
+            <div class="card">
+                <div class="card-title">
+                    <span class="card-title-dot" style="background: var(--green)"></span>
+                    Solar PV Forecast
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>System Capacity (kW)</label>
+                        <input type="number" class="form-control" id="solarCapacity" value="100">
+                    </div>
+                    <div class="form-group">
+                        <label>Forecast Horizon (hours)</label>
+                        <input type="number" class="form-control" id="solarHours" value="24" max="168">
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="generateSolarForecast()" id="solarBtn">
+                    ☀️ Generate Forecast
+                </button>
+
+                <div id="solarResults" style="display: none; margin-top: 24px;">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>Total Generation</h3>
+                            <div class="value" id="solarTotal">0 kWh</div>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Peak Power</h3>
+                            <div class="value" id="solarPeak">0 kW</div>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Capacity Factor</h3>
+                            <div class="value" id="solarCF">0%</div>
+                        </div>
+                    </div>
+
+                    <div id="solarChart" class="chart-container"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <span class="card-title-dot" style="background: var(--amber)"></span>
+                    Location Settings
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Latitude</label>
+                        <input type="number" class="form-control" value="-6.9147" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Longitude</label>
+                        <input type="number" class="form-control" value="107.6098" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Altitude (m)</label>
+                        <input type="number" class="form-control" value="768" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Tilt Angle</label>
+                        <input type="number" class="form-control" value="8.4" readonly>
+                    </div>
+                </div>
+                <p style="margin-top: 12px; font-size: 13px; color: var(--text3);">
+                    <strong>Note:</strong> Azimuth is set to 0° (North-facing) for optimal southern hemisphere performance.
+                </p>
+            </div>
+        </div>
+
+        <!-- Generators Page -->
+        <div id="generators" class="page">
+            <div class="card">
+                <div class="card-title">
+                    <span class="card-title-dot" style="background: var(--amber)"></span>
+                    Generator Fleet
+                </div>
+
+                <div class="generator-grid" id="generatorList">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <span class="card-title-dot" style="background: var(--accent)"></span>
+                    Indonesian Market Presets
+                </div>
+                <div class="generator-grid">
+                    <div class="generator-card">
+                        <h4>🏝️ Small Island System</h4>
+                        <div class="generator-specs">
+                            <div class="generator-spec"><label>Generators:</label> <span>2× Diesel</span></div>
+                            <div class="generator-spec"><label>Solar:</label> <span>100 kW</span></div>
+                            <div class="generator-spec"><label>Battery:</label> <span>200 kWh</span></div>
+                            <div class="generator-spec"><label>Use Case:</label> <span>PLN remote island</span></div>
+                        </div>
+                    </div>
+                    <div class="generator-card">
+                        <h4>🏭 Industrial Cogeneration</h4>
+                        <div class="generator-specs">
+                            <div class="generator-spec"><label>Generators:</label> <span>Gas + Diesel</span></div>
+                            <div class="generator-spec"><label>Solar:</label> <span>50 kW</span></div>
+                            <div class="generator-spec"><label>Battery:</label> <span>100 kWh</span></div>
+                            <div class="generator-spec"><label>Use Case:</label> <span>Factory</span></div>
+                        </div>
+                    </div>
+                    <div class="generator-card">
+                        <h4>🏢 Commercial Rooftop</h4>
+                        <div class="generator-specs">
+                            <div class="generator-spec"><label>Generators:</label> <span>1× Diesel</span></div>
+                            <div class="generator-spec"><label>Solar:</label> <span>200 kW</span></div>
+                            <div class="generator-spec"><label>Battery:</label> <span>150 kWh</span></div>
+                            <div class="generator-spec"><label>Use Case:</label> <span>Office building</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p><strong>Solara Optima Platform v1.0.0</strong></p>
+        <p>Politeknik Energi dan Pertambangan Bandung | DOI: 10.5281/zenodo.19650332</p>
+        <p>Backend API: <span class="font-mono">http://localhost:8000</span></p>
+    </footer>
+
+    <script>
+        // API Base URL
+        const API_BASE = 'http://localhost:8000';
+
+        // State
+        let loadProfile = [];
+        let optimizationResult = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initLoadInputs();
+            loadSampleLoad();
+            loadGenerators();
+            loadDashboardData();
+            checkAPIStatus();
+        });
+
+        // Tab Switching
+        function switchTab(tabId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Initialize Load Inputs
+        function initLoadInputs() {
+            const container = document.getElementById('loadInputs');
+            container.innerHTML = '';
+            for (let i = 0; i < 24; i++) {
+                const div = document.createElement('div');
+                div.className = 'load-input-item';
+                div.innerHTML = `
+                    <label>${i}:00</label>
+                    <input type="number" id="load_${i}" value="100" step="1" onchange="updateLoadFromInput(${i})">
+                `;
+                container.appendChild(div);
+            }
+        }
+
+        // Load Sample Load Profile
+        function loadSampleLoad() {
+            const type = document.getElementById('loadProfileType').value;
+            const peak = parseFloat(document.getElementById('peakLoad').value);
+            
+            const profiles = {
+                commercial: [
+                    0.4, 0.35, 0.3, 0.3, 0.35, 0.5,
+                    0.7, 0.9, 1.0, 0.95, 0.9, 0.85,
+                    0.9, 0.85, 0.9, 1.0, 0.95, 0.8,
+                    0.6, 0.5, 0.45, 0.4, 0.4, 0.4
+                ],
+                residential: [
+                    0.5, 0.45, 0.4, 0.4, 0.5, 0.7,
+                    0.9, 1.0, 0.9, 0.85, 0.85, 0.9,
+                    1.0, 0.9, 0.9, 1.0, 1.1, 1.2,
+                    1.3, 1.4, 1.2, 1.0, 0.8, 0.6
+                ],
+                industrial: [
+                    0.8, 0.8, 0.8, 0.8, 0.8, 0.9,
+                    1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+                    1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+                    1.0, 1.0, 0.9, 0.9, 0.8, 0.8
+                ]
+            };
+
+            const profile = profiles[type] || profiles.commercial;
+            loadProfile = profile.map(v => Math.round(v * peak * 10) / 10);
+
+            // Update inputs
+            for (let i = 0; i < 24; i++) {
+                document.getElementById(`load_${i}`).value = loadProfile[i];
+            }
+        }
+
+        function updateLoadFromInput(hour) {
+            const value = parseFloat(document.getElementById(`load_${hour}`).value);
+            loadProfile[hour] = value;
+        }
+
+        function updateLoadProfile() {
+            loadSampleLoad();
+        }
+
+        // Load Generators
+        function loadGenerators() {
+            const generators = [
+                {
+                    name: 'Gas Turbine',
+                    fuel: 'Natural Gas',
+                    min: 10,
+                    max: 200,
+                    ramp: 100,
+                    startup: 500000,
+                    fuel_cost: 800,
+                    emissions: 0.45
+                },
+                {
+                    name: 'Diesel Generator',
+                    fuel: 'Diesel',
+                    min: 5,
+                    max: 100,
+                    ramp: 50,
+                    startup: 300000,
+                    fuel_cost: 1200,
+                    emissions: 0.7
+                },
+                {
+                    name: 'Biomass Plant',
+                    fuel: 'Biomass',
+                    min: 20,
+                    max: 150,
+                    ramp: 30,
+                    startup: 400000,
+                    fuel_cost: 600,
+                    emissions: 0.15
+                }
+            ];
+
+            const container = document.getElementById('generatorList');
+            container.innerHTML = generators.map(g => `
+                <div class="generator-card">
+                    <h4>⚡ ${g.name}</h4>
+                    <div class="generator-specs">
+                        <div class="generator-spec"><label>Fuel:</label> <span>${g.fuel}</span></div>
+                        <div class="generator-spec"><label>Output:</label> <span>${g.min}-${g.max} kW</span></div>
+                        <div class="generator-spec"><label>Ramp:</label> <span>${g.ramp} kW/h</span></div>
+                        <div class="generator-spec"><label>Fuel Cost:</label> <span>Rp ${g.fuel_cost}/kWh</span></div>
+                        <div class="generator-spec"><label>Startup:</label> <span>Rp ${g.startup.toLocaleString()}</span></div>
+                        <div class="generator-spec"><label>CO₂:</label> <span>${g.emissions} kg/kWh</span></div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Check API Status
+        async function checkAPIStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/`);
+                const data = await response.json();
+                document.getElementById('apiStatus').textContent = 'API Connected';
+                document.getElementById('apiStatus').style.color = '#4ADE80';
+            } catch (error) {
+                document.getElementById('apiStatus').textContent = 'API Offline';
+                document.getElementById('apiStatus').style.color = '#F87171';
+            }
+        }
+
+        // Load Dashboard Data
+        async function loadDashboardData() {
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/weather/solar-resource`);
+                const data = await response.json();
+                if (data.success) {
+                    const resource = data.data;
+                    document.getElementById('statSolar').textContent = resource.annual_irradiation.toLocaleString();
+                    document.getElementById('statTilt').textContent = resource.optimal_tilt.year_round.toFixed(1) + '°';
+                    document.getElementById('statCF').textContent = (resource.capacity_factor_estimate * 100).toFixed(0) + '%';
+                    
+                    // Monthly chart
+                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    const ghi = resource.monthly_averages.map(m => m.ghi);
+                    const temp = resource.monthly_averages.map(m => m.temp);
+
+                    Plotly.newPlot('monthlyChart', [
+                        {
+                            x: months,
+                            y: ghi,
+                            type: 'bar',
+                            name: 'GHI',
+                            marker: { color: '#3A7A18' },
+                            yaxis: 'y'
+                        },
+                        {
+                            x: months,
+                            y: temp,
+                            type: 'scatter',
+                            mode: 'lines+markers',
+                            name: 'Temp',
+                            line: { color: '#B04030', width: 3 },
+                            yaxis: 'y2'
+                        }
+                    ], {
+                        title: 'Monthly Solar Irradiance & Temperature',
+                        yaxis: { title: 'GHI (kWh/m²/day)' },
+                        yaxis2: {
+                            title: 'Temperature (°C)',
+                            overlaying: 'y',
+                            side: 'right'
+                        },
+                        legend: { orientation: 'h', y: -0.2 },
+                        margin: { t: 40, b: 40, l: 50, r: 50 }
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to load dashboard data:', error);
+            }
+        }
+
+        // Run Optimization
+        async function runOptimization() {
+            const btn = document.getElementById('runBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Running...';
+
+            const generators = [{
+                generator_id: 1,
+                name: 'Gas Turbine',
+                fuel_type: 'Natural Gas',
+                min_output: 10,
+                max_output: 200,
+                ramp_up: 100,
+                ramp_down: 100,
+                min_uptime: 2,
+                min_downtime: 2,
+                initial_status: 1,
+                initial_output: 100,
+                startup_cost: 500000,
+                shutdown_cost: 0,
+                no_load_cost: 50000,
+                fuel_cost: 800,
+                emissions_rate: 0.45
+            }];
+
+            const payload = {
+                load_profile: loadProfile,
+                generators: generators,
+                pv_system_capacity: parseFloat(document.getElementById('pvCapacity').value),
+                bess_capacity: parseFloat(document.getElementById('bessCapacity').value),
+                bess_power_rating: parseFloat(document.getElementById('bessPower').value)
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/optimize/run`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    optimizationResult = result.data.result;
+                    displayResults();
+                } else {
+                    alert('Optimization failed: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('Failed to connect to API: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '▶ Run Optimization';
+            }
+        }
+
+        // Display Results
+        function displayResults() {
+            const result = optimizationResult;
+            document.getElementById('resultsCard').style.display = 'block';
+
+            // Stats
+            document.getElementById('resultCost').textContent = 'Rp ' + (result.total_cost / 1000000).toFixed(2) + 'M';
+            document.getElementById('resultCostUSD').textContent = '~$' + (result.total_cost / 15500).toLocaleString() + ' USD';
+            document.getElementById('resultStatus').textContent = result.status;
+            document.getElementById('resultTime').textContent = result.solve_time.toFixed(2) + 's';
+
+            const solarTotal = result.solar_output ? result.solar_output.reduce((a, b) => a + b, 0) : 0;
+            document.getElementById('resultSolar').textContent = (solarTotal / 1000).toFixed(1) + ' kWh';
+            document.getElementById('resultSolarPeak').textContent = 'Peak: ' + (Math.max(...(result.solar_output || [0])) / 1000).toFixed(1) + ' kW';
+
+            const loadTotal = result.load_served ? result.load_served.reduce((a, b) => a + b, 0) : 0;
+            document.getElementById('resultLoad').textContent = (loadTotal / 1000).toFixed(1) + ' kWh';
+            document.getElementById('resultLoadPeak').textContent = 'Peak: ' + Math.max(...(result.load_served || [0])).toFixed(1) + ' kW';
+
+            // Stack Chart
+            const hours = Array.from({length: 24}, (_, i) => i);
+            const gasOutput = result.generator_schedules[0]?.output || [];
+            const solarOutput = result.solar_output || [];
+
+            Plotly.newPlot('stackChart', [
+                {
+                    x: hours,
+                    y: gasOutput,
+                    type: 'bar',
+                    name: 'Gas Turbine',
+                    marker: { color: '#5A7A30' }
+                },
+                {
+                    x: hours,
+                    y: solarOutput,
+                    type: 'bar',
+                    name: 'Solar PV',
+                    marker: { color: '#3A7A18' }
+                },
+                {
+                    x: hours,
+                    y: loadProfile,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'Load',
+                    line: { color: '#2C2418', width: 3, dash: 'dash' },
+                    marker: { size: 6 }
+                }
+            ], {
+                title: 'Generation Stack',
+                barmode: 'stack',
+                xaxis: { title: 'Hour', dtick: 3 },
+                yaxis: { title: 'Power (kW)' },
+                legend: { orientation: 'h', y: -0.2 },
+                margin: { t: 40, b: 40, l: 50, r: 20 }
+            });
+        }
+
+        // Generate Solar Forecast
+        async function generateSolarForecast() {
+            const btn = document.getElementById('solarBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Generating...';
+
+            const capacity = parseFloat(document.getElementById('solarCapacity').value);
+            const hours = parseInt(document.getElementById('solarHours').value);
+
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/forecast/solar?capacity=${capacity}&hours=${hours}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    const data = result.data;
+                    document.getElementById('solarResults').style.display = 'block';
+
+                    document.getElementById('solarTotal').textContent = data.total_generation.toFixed(1) + ' kWh';
+                    document.getElementById('solarPeak').textContent = (Math.max(...data.generation) / 1000).toFixed(2) + ' kW';
+                    const avgCF = data.capacity_factor.reduce((a, b) => a + b, 0) / data.capacity_factor.length;
+                    document.getElementById('solarCF').textContent = (avgCF * 100).toFixed(1) + '%';
+
+                    // Solar Chart
+                    const plotHours = data.timestamps.map(t => new Date(t).getHours());
+                    
+                    Plotly.newPlot('solarChart', [
+                        {
+                            x: plotHours,
+                            y: data.generation,
+                            type: 'scatter',
+                            mode: 'lines+markers',
+                            fill: 'tozeroy',
+                            line: { color: '#3A7A18', width: 3 },
+                            marker: { size: 6 },
+                            name: 'Generation'
+                        },
+                        {
+                            x: plotHours,
+                            y: data.irradiance,
+                            type: 'scatter',
+                            mode: 'lines',
+                            line: { color: '#A07010', width: 2 },
+                            name: 'GHI',
+                            yaxis: 'y2'
+                        }
+                    ], {
+                        title: 'Solar Generation Forecast',
+                        xaxis: { title: 'Hour of Day', dtick: 3 },
+                        yaxis: { title: 'Generation (kW)' },
+                        yaxis2: {
+                            title: 'Irradiance (W/m²)',
+                            overlaying: 'y',
+                            side: 'right'
+                        },
+                        legend: { orientation: 'h', y: -0.2 },
+                        margin: { t: 40, b: 40, l: 50, r: 50 }
+                    });
+                }
+            } catch (error) {
+                alert('Failed to generate forecast: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '☀️ Generate Forecast';
+            }
+        }
+    </script>
+</body>
+</html>
