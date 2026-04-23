@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate sample data and visualizations for Solar UC/ED Platform
+"""Generate sample data and visualizations for Solara Optima Platform"""
 """
 import json
 import pandas as pd
@@ -77,7 +77,7 @@ def create_sample_result():
     return result
 
 # Save sample data
-data_dir = Path("~/projects/solar-uc-ed-platform/data").expanduser()
+data_dir = Path("~/projects/solara-optima-platform/data").expanduser()
 data_dir.mkdir(parents=True, exist_ok=True)
 
 # Save load profile

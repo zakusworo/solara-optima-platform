@@ -1,10 +1,10 @@
 #!/bin/bash
-# Docker deployment script for Solar UC/ED Platform
+# Docker deployment script for Solara Optima Platform
 
 set -e
 
 echo "=========================================="
-echo "Solar UC/ED Platform - Docker Deployment"
+echo "Solara Optima Platform - Docker Deployment"
 echo "=========================================="
 echo ""
 
@@ -81,7 +81,7 @@ case $ACTION in
     "ollama-pull")
         MODEL=${2:-"qwen3.5"}
         echo -e "${YELLOW}Pulling Ollama model: $MODEL${NC}"
-        docker exec solar-uc-ed-ollama ollama pull $MODEL
+        docker exec solara-optima-ollama ollama pull $MODEL
         echo -e "${GREEN}✓ Model pulled${NC}"
         ;;
     

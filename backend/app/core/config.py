@@ -1,5 +1,5 @@
 """
-Core configuration and settings for Solar UC/ED Platform
+Core configuration and settings for Solara Optima Platform
 """
 from pydantic_settings import BaseSettings
 from typing import Optional
@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     CARBON_PRICE: float = 50000.0  # Rp/tCO2
     
     # Database
-    DATABASE_URL: str = "postgresql://user:password@localhost:5432/solar_uc_ed"
+    DATABASE_URL: str = "postgresql://user:***@localhost:5432/solara_optima"
     DATABASE_ECHO: bool = False
     
     # Redis

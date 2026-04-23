@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-Create interactive HTML visualization for Solar UC/ED results
+"""Create interactive HTML visualization for Solara Optima results"""
 """
 import json
 from pathlib import Path
 from datetime import datetime
 
 # Load sample data
-data_dir = Path("~/projects/solar-uc-ed-platform/data").expanduser()
+data_dir = Path("~/projects/solara-optima-platform/data").expanduser()
 
 with open(data_dir / "sample_optimization_result.json") as f:
     result = json.load(f)
@@ -24,7 +24,7 @@ html_content = f"""<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solar UC/ED Platform - Results Visualization</title>
+    <title>Solara Optima Platform - Results Visualization</title>
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
@@ -106,7 +106,7 @@ html_content = f"""<!DOCTYPE html>
 <body>
     <div class="container">
         <div class="header">
-            <h1>☀️ Solar UC/ED Platform - Optimization Results</h1>
+            <h1>☀️ Solara Optima Platform - Optimization Results</h1>
             <p>Unit Commitment & Economic Dispatch with Solar PV Integration | Bandung, Indonesia</p>
         </div>
 
@@ -175,7 +175,7 @@ html_content = f"""<!DOCTYPE html>
         </div>
 
         <div class="footer">
-            <p><strong>Solar UC/ED Platform v1.0.0</strong></p>
+            <p><strong>Solara Optima Platform v1.0.0</strong></p>
             <p>DOI: 10.5281/zenodo.19653510</p>
             <p>Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
         </div>

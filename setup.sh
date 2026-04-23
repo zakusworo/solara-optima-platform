@@ -1,11 +1,11 @@
 #!/bin/bash
-# Solar UC/ED Platform - Setup Script
+# Solara Optima Platform - Setup Script
 # Automated installation for Bandung development environment
 
 set -e
 
 echo "=========================================="
-echo "Solar UC/ED Platform - Setup"
+echo "Solara Optima Platform - Setup"
 echo "Politeknik Energi dan Pertambangan Bandung"
 echo "=========================================="
 echo ""

@@ -1,4 +1,4 @@
-# Solar UC/ED Platform - Quick Start Guide
+# Solara Optima Platform - Quick Start Guide
 
 ## Project Overview
 
@@ -36,7 +36,7 @@ A modern, production-grade **Unit Commitment & Economic Dispatch** optimization 
 
 ### Option 1: Automated Setup
 ```bash
-cd ~/projects/solar-uc-ed-platform
+cd ~/projects/solara-optima-platform
 ./setup.sh
 ```
 
@@ -44,7 +44,7 @@ cd ~/projects/solar-uc-ed-platform
 
 #### Backend
 ```bash
-cd ~/projects/solar-uc-ed-platform/backend
+cd ~/projects/solara-optima-platform/backend
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements-minimal.txt
@@ -53,7 +53,7 @@ cp .env.example .env
 
 #### Frontend
 ```bash
-cd ~/projects/solar-uc-ed-platform/frontend
+cd ~/projects/solara-optima-platform/frontend
 npm install
 ```
 
@@ -61,7 +61,7 @@ npm install
 
 ### Terminal 1: Backend
 ```bash
-cd ~/projects/solar-uc-ed-platform/backend
+cd ~/projects/solara-optima-platform/backend
 source venv/bin/activate
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
@@ -70,7 +70,7 @@ Access API docs: **http://localhost:8000/docs**
 
 ### Terminal 2: Frontend
 ```bash
-cd ~/projects/solar-uc-ed-platform/frontend
+cd ~/projects/solara-optima-platform/frontend
 npm run dev
 ```
 
@@ -132,7 +132,7 @@ curl -X POST http://localhost:8000/api/v1/optimize/run-with-solar \
 ## Project Structure
 
 ```
-solar-uc-ed-platform/
+solara-optima-platform/
 ├── backend/
 │   ├── app/
 │   │   ├── api/              # REST endpoints

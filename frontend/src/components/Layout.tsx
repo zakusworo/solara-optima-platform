@@ -48,7 +48,7 @@ export default function Layout() {
                 <Sun size={18} className="text-white" />
               </div>
               <div>
-                <h1 className="text-sm font-semibold">Solar UC/ED</h1>
+                <h1 className="text-sm font-semibold">Solara Optima</h1>
                 <p className="text-xs text-[#8A7A60] font-mono">Bandung, ID</p>
               </div>
             </div>

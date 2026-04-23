@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-Test script for Solar UC/ED Platform API
+"""Test script for Solara Optima Platform API"""
 """
 import sys
 import json
 
 # Test imports
 print("=" * 60)
-print("Solar UC/ED Platform - API Test Suite")
+print("Solara Optima Platform - API Test Suite")
 print("=" * 60)
 print()
 
