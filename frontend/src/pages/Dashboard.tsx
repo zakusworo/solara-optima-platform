@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import { TrendingUp, Sun, Zap, Battery } from 'lucide-react'
 import axios from 'axios'
 import Plot from 'react-plotly.js'
@@ -161,33 +162,33 @@ export default function Dashboard() {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <a
-          href="/optimize"
+        <Link
+          to="/optimize"
           className="bg-white rounded-xl border border-[#C8BFA8] p-6 hover:border-[#3A7010] transition-colors group"
         >
           <h3 className="font-semibold group-hover:text-[#3A7010]">Run Optimization</h3>
           <p className="text-sm text-[#8A7A60] mt-2">
             Optimize generator dispatch with solar and battery integration
           </p>
-        </a>
-        <a
-          href="/solar"
+        </Link>
+        <Link
+          to="/solar"
           className="bg-white rounded-xl border border-[#C8BFA8] p-6 hover:border-[#3A7010] transition-colors group"
         >
           <h3 className="font-semibold group-hover:text-[#3A7010]">Solar Forecast</h3>
           <p className="text-sm text-[#8A7A60] mt-2">
             Generate PV generation forecasts using pvlib and weather data
           </p>
-        </a>
-        <a
-          href="/generators"
+        </Link>
+        <Link
+          to="/generators"
           className="bg-white rounded-xl border border-[#C8BFA8] p-6 hover:border-[#3A7010] transition-colors group"
         >
           <h3 className="font-semibold group-hover:text-[#3A7010]">Generator Fleet</h3>
           <p className="text-sm text-[#8A7A60] mt-2">
             Configure generators with Indonesian market presets
           </p>
-        </a>
+        </Link>
       </div>
     </div>
   )
