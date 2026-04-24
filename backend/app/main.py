@@ -7,7 +7,7 @@ from loguru import logger
 import sys
 
 from app.core.config import settings
-from app.api import optimize, forecast, generators, weather, ai_forecast, location
+from app.api import optimize, forecast, generators, weather, ai_forecast, location, pv_modules
 from app.core.logging import setup_logging
 
 
@@ -41,6 +41,7 @@ def create_application() -> FastAPI:
     application.include_router(weather.router, prefix="/api/v1/weather", tags=["Weather"])
     application.include_router(ai_forecast.router, prefix="/api/v1/ai", tags=["AI Forecasting"])
     application.include_router(location.router, prefix="/api/v1/location", tags=["Location"])
+    application.include_router(pv_modules.router, prefix="/api/v1/pv", tags=["PV Modules"])
     
     @application.get("/")
     async def root():

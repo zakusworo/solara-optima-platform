@@ -24,6 +24,7 @@ async def get_solar_forecast(
     hours: int = Query(default=24, ge=1, le=168, description="Forecast horizon (hours)"),
     latitude: Optional[float] = Query(None, description="Override latitude"),
     longitude: Optional[float] = Query(None, description="Override longitude"),
+    altitude: Optional[float] = Query(None, description="Override altitude (m)"),
     tilt: Optional[float] = Query(None, description="Panel tilt angle"),
     azimuth: Optional[float] = Query(None, description="Panel azimuth (0°=North)"),
 ):
@@ -71,7 +72,7 @@ async def get_solar_forecast(
         
         logger.info(
             f"Solar forecast: {forecast.total_generation:.1f} kWh total, "
-            f"peak: {forecast.generation[max(forecast.generation)]/1000:.2f} kW"
+            f"peak: {max(forecast.generation)/1000:.2f} kW"
         )
         
         return APIResponse(

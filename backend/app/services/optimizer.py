@@ -131,6 +131,11 @@ class UCEDOptimizer:
                 cat='Continuous',
                 
             )
+            self.variables['bess_mode'] = pl.LpVariable.dicts(
+                "BessMode",
+                (t for t in time_periods),
+                cat='Binary',
+            )
         
         # Continuous: Spinning reserve
         self.variables['r'] = pl.LpVariable.dicts(
@@ -333,29 +338,31 @@ class UCEDOptimizer:
                         self.variables['soc'][t] == 
                         self.variables['soc'][t-1] + 
                         self.variables['p_bess_ch'][t] * request.bess_efficiency -
-                        self.variables['p_bess_dis'][t] / request.bess_efficiency,
+                        self.variables['p_bess_dis'][t] * (1.0 / request.bess_efficiency),
                         f"BatteryDynamics_{t}"
                     )
                 else:
                     self.model += (
                         self.variables['soc'][t] == 
-                        request.bess_initial_soc + 
+                        request.bess_capacity * request.bess_initial_soc + 
                         self.variables['p_bess_ch'][t] * request.bess_efficiency -
-                        self.variables['p_bess_dis'][t] / request.bess_efficiency,
+                        self.variables['p_bess_dis'][t] * (1.0 / request.bess_efficiency),
                         f"BatteryDynamics_{t}"
                     )
-                
                 # No simultaneous charge/discharge (relaxed with big-M)
-                M = request.bess_power_rating
                 self.model += (
-                    self.variables['p_bess_ch'][t] <= M * (1 - self.variables.get('p_bess_dis', [0]*T)[t] / M),
-                    f"NoSimultaneousChargeDischarge_{t}"
+                    self.variables['p_bess_ch'][t] <= request.bess_power_rating * self.variables['bess_mode'][t],
+                    f"ChargeMode_{t}"
+                )
+                self.model += (
+                    self.variables['p_bess_dis'][t] <= request.bess_power_rating * (1 - self.variables['bess_mode'][t]),
+                    f"DischargeMode_{t}"
                 )
             
             # End-of-horizon SOC constraint (optional)
             if request.bess_final_soc is not None:
                 self.model += (
-                    self.variables['soc'][T-1] >= request.bess_final_soc,
+                    self.variables['soc'][T-1] >= request.bess_capacity * request.bess_final_soc,
                     "FinalSOC"
                 )
         

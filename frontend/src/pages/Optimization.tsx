@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { useQuery, useMutation } from '@tanstack/react-query'
-import { Play, Download, RefreshCw, TrendingUp, Zap, Sun, Battery } from 'lucide-react'
+import { Play, RefreshCw, Zap, Sun, Battery, Edit3 } from 'lucide-react'
 import axios from 'axios'
 import Plot from 'react-plotly.js'
 
 export default function Optimization() {
-  const [loadProfile, setLoadProfile] = useState<number[]>([])
+  // Initialize with 24 zeros so inputs are always present
+  const [loadProfile, setLoadProfile] = useState<number[]>(Array(24).fill(0))
   const [isRunning, setIsRunning] = useState(false)
   const [result, setResult] = useState<any>(null)
 
@@ -17,11 +17,19 @@ export default function Optimization() {
       115, 110, 115, 125, 140, 160,
       170, 165, 150, 130, 110, 95,
     ]
-    setLoadProfile(sample)
+    setLoadProfile([...sample])
+  }
+
+  const updateLoad = (hour: number, value: string) => {
+    const num = parseFloat(value) || 0
+    const updated = [...loadProfile]
+    updated[hour] = num
+    setLoadProfile(updated)
   }
 
   const runOptimization = async () => {
-    if (loadProfile.length === 0) {
+    const hasData = loadProfile.some(v => v > 0)
+    if (!hasData) {
       alert('Please load a sample or enter load data')
       return
     }
@@ -36,9 +44,9 @@ export default function Optimization() {
             name: 'Gas Turbine 1',
             fuel_type: 'Natural Gas',
             min_output: 10,
-            max_output: 100,
-            ramp_up: 50,
-            ramp_down: 50,
+            max_output: 150,
+            ramp_up: 60,
+            ramp_down: 60,
             min_uptime: 2,
             min_downtime: 2,
             initial_status: 1,
@@ -54,9 +62,9 @@ export default function Optimization() {
             name: 'Diesel Generator',
             fuel_type: 'Diesel',
             min_output: 5,
-            max_output: 50,
-            ramp_up: 25,
-            ramp_down: 25,
+            max_output: 100,
+            ramp_up: 40,
+            ramp_down: 40,
             min_uptime: 1,
             min_downtime: 1,
             initial_status: 0,
@@ -81,6 +89,9 @@ export default function Optimization() {
       setIsRunning(false)
     }
   }
+
+  // Determine if chart should show empty placeholder
+  const hasSample = loadProfile.some(v => v > 0)
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -117,23 +128,27 @@ export default function Optimization() {
             </button>
           </div>
 
-          {loadProfile.length > 0 ? (
+          {/* Chart */}
+          {hasSample ? (
             <div className="h-48">
               <Plot
                 data={[
                   {
-                    x: Array.from({ length: loadProfile.length }, (_, i) => i),
+                    x: Array.from({ length: 24 }, (_, i) => i),
                     y: loadProfile,
                     type: 'scatter',
                     mode: 'lines+markers',
                     line: { color: '#A07010', width: 2 },
-                    marker: { size: 4 },
+                    marker: { size: 6, symbol: 'diamond' },
                   },
                 ]}
                 layout={{
                   margin: { t: 20, b: 30, l: 40, r: 20 },
-                  xaxis: { title: 'Hour', tickmode: 'linear', dtick: 3 },
-                  yaxis: { title: 'Load (kW)', range: [0, Math.max(...loadProfile) * 1.2] },
+                  xaxis: { title: 'Hour', tickmode: 'linear', dtick: 3, range: [0, 23] },
+                  yaxis: {
+                    title: 'Load (kW)',
+                    range: [0, Math.max(...loadProfile) * 1.2 > 0 ? Math.max(...loadProfile) * 1.2 : 200],
+                  },
                   showlegend: false,
                 }}
                 config={{ responsive: true, displayModeBar: false }}
@@ -142,9 +157,49 @@ export default function Optimization() {
             </div>
           ) : (
             <div className="h-48 flex items-center justify-center bg-[#F5F0E8] rounded-lg border-2 border-dashed border-[#C8BFA8]">
-              <p className="text-[#8A7A60]">Click "Load Sample" to load a typical load profile</p>
+              <p className="text-[#8A7A60]">Click "Load Sample" or enter values below to build a load profile</p>
             </div>
           )}
+
+          {/* Hourly Load Editor */}
+          <div className="mt-6 border-t border-[#C8BFA8] pt-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Edit3 size={16} className="text-[#8A7A60]" />
+              <span className="text-sm font-medium text-[#5A4E3A]">Hourly Load Editor (kW)</span>
+            </div>
+            <div className="grid grid-cols-6 gap-2">
+              {loadProfile.map((value, hour) => (
+                <div key={hour} className="flex flex-col">
+                  <label className="text-[10px] text-[#8A7A60] font-mono mb-0.5">
+                    {hour.toString().padStart(2, '0')}:00
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={value === 0 && !hasSample ? '' : value}
+                    onChange={(e) => updateLoad(hour, e.target.value)}
+                    className="w-full px-2 py-1.5 text-sm border border-[#C8BFA8] rounded-md focus:ring-1 focus:ring-[#3A7010] focus:border-[#3A7010] outline-none text-right font-mono"
+                    placeholder="0"
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 flex items-center justify-between text-xs text-[#8A7A60]">
+              <span>
+                Total daily load: {' '}
+                <span className="font-mono font-medium text-[#5A4E3A]">{loadProfile.reduce((a, b) => a + b, 0).toFixed(0)}</span>{' '}
+                kWh
+              </span>
+              <span>
+                Peak: {' '}
+                <span className="font-mono font-medium text-[#5A4E3A]">{Math.max(...loadProfile).toFixed(0)}</span>{' '}
+                kW · Avg: {' '}
+                <span className="font-mono font-medium text-[#5A4E3A]">{(loadProfile.reduce((a, b) => a + b, 0) / 24).toFixed(1)}</span>{' '}
+                kW
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* System Configuration */}
@@ -200,7 +255,7 @@ export default function Optimization() {
             <div className="bg-white rounded-xl border border-[#C8BFA8] p-4">
               <p className="text-xs text-[#8A7A60] uppercase tracking-wide">Solar Generation</p>
               <p className="text-2xl font-semibold mt-1 text-[#3A7A18]">
-                {result.solar_output ? (result.solar_output.reduce((a, b) => a + b, 0) / 1000).toFixed(1) : 0} kWh
+                {result.solar_output ? (result.solar_output.reduce((a: number, b: number) => a + b, 0) / 1000).toFixed(1) : 0} kWh
               </p>
             </div>
             <div className="bg-white rounded-xl border border-[#C8BFA8] p-4">

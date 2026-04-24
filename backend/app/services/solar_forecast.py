@@ -259,9 +259,9 @@ class SolarForecastService:
             'generation': [max(0, g) for g in generation],
             'irradiance': weather['ghi'].tolist(),
             'temperature': weather['temp_air'].tolist(),
-            'capacity_factor': [g / (capacity * 1000) for g in generation],
-            'total_generation': sum(generation) / 1000,  # kWh
-            'peak_generation': max(generation) / 1000,  # kW
+            'capacity_factor': [g / capacity for g in generation],
+            'total_generation': sum(generation),  # kWh (hourly data)
+            'peak_generation': max(generation),  # kW
         }
         
         logger.info(

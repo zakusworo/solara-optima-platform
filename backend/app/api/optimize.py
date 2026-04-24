@@ -107,7 +107,7 @@ async def run_optimization_with_solar(request: OptimizationRequest):
             # Determine forecast horizon from load profile
             horizon_hours = len(request.load_profile) * settings.TIME_RESOLUTION
             
-            forecast = await solar_service.generate_forecast(
+            forecast = solar_service.generate_forecast(
                 capacity=request.pv_system_capacity,
                 horizon_hours=horizon_hours,
             )
