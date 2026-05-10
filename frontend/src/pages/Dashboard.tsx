@@ -1,14 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { TrendingUp, Sun, Zap, Battery } from 'lucide-react'
-import axios from 'axios'
 import Plot from 'react-plotly.js'
+import { api } from '../utils/api'
 
 export default function Dashboard() {
   const { data: healthData } = useQuery({
     queryKey: ['health'],
     queryFn: async () => {
-      const response = await axios.get('http://localhost:8000/')
+      const response = await api.get('/')
       return response.data
     },
   })
@@ -16,7 +16,7 @@ export default function Dashboard() {
   const { data: solarResource } = useQuery({
     queryKey: ['solar-resource'],
     queryFn: async () => {
-      const response = await axios.get('http://localhost:8000/api/v1/weather/solar-resource')
+      const response = await api.get('/api/v1/weather/solar-resource')
       return response.data.data
     },
   })

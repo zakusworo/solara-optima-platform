@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Settings as SettingsIcon, Save, Globe, Cpu, Zap, MapPin, Search } from 'lucide-react'
-import axios from 'axios'
 import LocationMap from '../components/LocationMap'
+import { api } from '../utils/api'
 
 interface GeoResult {
   name: string
@@ -33,7 +33,7 @@ export default function Settings() {
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
-    axios.get('http://localhost:8000/api/v1/location/current')
+    api.get('/api/v1/location/current')
       .then(r => {
         if (r.data.success) {
           const d = r.data.data
@@ -54,7 +54,7 @@ export default function Settings() {
     if (!searchQuery.trim()) return
     setSearching(true)
     try {
-      const resp = await axios.get('http://localhost:8000/api/v1/location/search', {
+      const resp = await api.get('/api/v1/location/search', {
         params: { q: searchQuery, limit: 5 },
       })
       if (resp.data.success) {
@@ -84,7 +84,7 @@ export default function Settings() {
 
   const handleSave = async () => {
     try {
-      await axios.post('http://localhost:8000/api/v1/location/update', {
+      await api.post('/api/v1/location/update', {
         latitude: settings.latitude,
         longitude: settings.longitude,
         altitude: settings.altitude,

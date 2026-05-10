@@ -25,13 +25,17 @@ def create_application() -> FastAPI:
         redoc_url="/redoc",
     )
     
-    # CORS middleware
+    # CORS middleware — restricted to configured origins. Wildcard with
+    # allow_credentials=True is rejected by browsers anyway.
+    allowed_origins = settings.cors_origins_list
+    if not allowed_origins:
+        logger.warning("CORS_ORIGINS is empty; no cross-origin requests will be accepted")
     application.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],  # Configure for production
+        allow_origins=allowed_origins,
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type"],
     )
     
     # Include routers

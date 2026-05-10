@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react'
 import { Outlet, Link, useLocation } from 'react-router-dom'
-import { 
-  Zap, 
-  Sun, 
-  Settings as SettingsIcon, 
-  BarChart3, 
+import {
+  Zap,
+  Sun,
+  Settings as SettingsIcon,
+  BarChart3,
   Cpu,
   Menu,
   X,
   MapPin,
   Loader2
 } from 'lucide-react'
+import { apiUrl } from '../utils/api'
 
 interface GeoLocation {
   city: string
@@ -73,7 +74,7 @@ export default function Layout() {
 
   async function fetchBackendLocation() {
     try {
-      const resp = await fetch('http://localhost:8000/api/v1/location/current')
+      const resp = await fetch(apiUrl('/api/v1/location/current'))
       const data = await resp.json()
       setUserLocation({
         city: data?.city || 'Bandung',

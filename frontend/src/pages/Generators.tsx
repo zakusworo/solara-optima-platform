@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
 import { Zap, Plus, Edit, Trash2 } from 'lucide-react'
-import axios from 'axios'
+import { api } from '../utils/api'
 
 export default function Generators() {
   const { data: templatesData } = useQuery({
     queryKey: ['generator-templates'],
     queryFn: async () => {
-      const response = await axios.get('http://localhost:8000/api/v1/generators/templates')
+      const response = await api.get('/api/v1/generators/templates')
       return response.data
     },
   })
@@ -14,7 +14,7 @@ export default function Generators() {
   const { data: presetsData } = useQuery({
     queryKey: ['indonesia-presets'],
     queryFn: async () => {
-      const response = await axios.get('http://localhost:8000/api/v1/generators/presets/indonesia')
+      const response = await api.get('/api/v1/generators/presets/indonesia')
       return response.data
     },
   })

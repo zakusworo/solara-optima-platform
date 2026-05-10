@@ -2,22 +2,30 @@
 Core configuration and settings for Solara Optima Platform
 """
 from pydantic_settings import BaseSettings
-from typing import Optional
+from typing import List, Optional
 import os
 from pathlib import Path
 
 
 class Settings(BaseSettings):
     """Application settings with environment variable overrides"""
-    
+
     # Application
     APP_NAME: str = "Solara Optima Platform"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = True
-    
+
     # Server
     HOST: str = "0.0.0.0"
     PORT: int = 8000
+
+    # CORS — comma-separated origins (e.g. "http://localhost:3000,https://app.example.com").
+    # Use "*" only in DEBUG; in production set explicitly.
+    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:5173"
+
+    @property
+    def cors_origins_list(self) -> List[str]:
+        return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
     
     # Location (Default: Bandung, Indonesia)
     LATITUDE: float = -6.9147

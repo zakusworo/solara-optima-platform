@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Play, RefreshCw, Zap, Sun, Battery, Edit3 } from 'lucide-react'
-import axios from 'axios'
 import Plot from 'react-plotly.js'
+import { api } from '../utils/api'
 
 export default function Optimization() {
   // Initialize with 24 zeros so inputs are always present
@@ -36,7 +36,7 @@ export default function Optimization() {
 
     setIsRunning(true)
     try {
-      const response = await axios.post('http://localhost:8000/api/v1/optimize/run-with-solar', {
+      const response = await api.post('/api/v1/optimize/run-with-solar', {
         load_profile: loadProfile,
         generators: [
           {

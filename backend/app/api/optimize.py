@@ -5,7 +5,9 @@ from fastapi import APIRouter, HTTPException, BackgroundTasks
 from typing import List, Optional
 from loguru import logger
 import uuid
-from datetime import datetime
+from collections import OrderedDict
+from datetime import datetime, timedelta
+from threading import Lock
 
 from app.models.schemas import (
     OptimizationRequest,
@@ -18,8 +20,37 @@ from app.core.config import settings
 
 router = APIRouter()
 
-# Store optimization results temporarily (use Redis in production)
-optimization_results = {}
+# Bounded in-process result store. Replace with Redis when horizontally scaling —
+# this only protects a single worker from unbounded memory growth.
+_RESULT_STORE_MAX_ENTRIES = 100
+_RESULT_STORE_TTL = timedelta(hours=24)
+optimization_results: "OrderedDict[str, dict]" = OrderedDict()
+_results_lock = Lock()
+
+
+def _evict_stale_results() -> None:
+    """Drop expired entries and enforce capacity (LRU)."""
+    now = datetime.now()
+    with _results_lock:
+        # TTL eviction
+        expired = [jid for jid, v in optimization_results.items()
+                   if now - v["timestamp"] > _RESULT_STORE_TTL]
+        for jid in expired:
+            optimization_results.pop(jid, None)
+        # Capacity eviction (oldest first)
+        while len(optimization_results) > _RESULT_STORE_MAX_ENTRIES:
+            optimization_results.popitem(last=False)
+
+
+def _store_result(job_id: str, request: OptimizationRequest, result: OptimizationResult) -> None:
+    with _results_lock:
+        optimization_results[job_id] = {
+            "request": request,
+            "result": result,
+            "timestamp": datetime.now(),
+        }
+        optimization_results.move_to_end(job_id)
+    _evict_stale_results()
 
 
 @router.post("/run", response_model=APIResponse)
@@ -49,12 +80,8 @@ async def run_optimization_endpoint(request: OptimizationRequest):
         
         # Store result
         job_id = str(uuid.uuid4())
-        optimization_results[job_id] = {
-            "request": request,
-            "result": result,
-            "timestamp": datetime.now(),
-        }
-        
+        _store_result(job_id, request, result)
+
         logger.info(f"Optimization completed: {result.status}, Cost: Rp {result.total_cost:,.0f}")
         
         return APIResponse(
@@ -74,12 +101,15 @@ async def run_optimization_endpoint(request: OptimizationRequest):
 @router.get("/results/{job_id}", response_model=APIResponse)
 async def get_optimization_results(job_id: str):
     """Retrieve optimization results by job ID"""
-    
-    if job_id not in optimization_results:
-        raise HTTPException(status_code=404, detail="Optimization job not found")
-    
-    stored = optimization_results[job_id]
-    
+
+    _evict_stale_results()
+    with _results_lock:
+        stored = optimization_results.get(job_id)
+        if stored is None:
+            raise HTTPException(status_code=404, detail="Optimization job not found")
+        # Touch for LRU
+        optimization_results.move_to_end(job_id)
+
     return APIResponse(
         success=True,
         data=stored["result"],
@@ -119,12 +149,8 @@ async def run_optimization_with_solar(request: OptimizationRequest):
         result = run_optimization(request)
         
         job_id = str(uuid.uuid4())
-        optimization_results[job_id] = {
-            "request": request,
-            "result": result,
-            "timestamp": datetime.now(),
-        }
-        
+        _store_result(job_id, request, result)
+
         return APIResponse(
             success=True,
             data={
@@ -163,12 +189,11 @@ async def get_solver_status():
 @router.delete("/results/{job_id}")
 async def delete_optimization_result(job_id: str):
     """Delete optimization results"""
-    
-    if job_id not in optimization_results:
-        raise HTTPException(status_code=404, detail="Job not found")
-    
-    del optimization_results[job_id]
-    
+
+    with _results_lock:
+        if optimization_results.pop(job_id, None) is None:
+            raise HTTPException(status_code=404, detail="Job not found")
+
     return APIResponse(
         success=True,
         message="Results deleted successfully",
@@ -178,12 +203,14 @@ async def delete_optimization_result(job_id: str):
 @router.get("/results")
 async def list_optimization_results(limit: int = 10):
     """List recent optimization jobs"""
-    
-    jobs = sorted(
-        optimization_results.items(),
-        key=lambda x: x[1]["timestamp"],
-        reverse=True,
-    )[:limit]
+
+    _evict_stale_results()
+    with _results_lock:
+        jobs = sorted(
+            optimization_results.items(),
+            key=lambda x: x[1]["timestamp"],
+            reverse=True,
+        )[:limit]
     
     return APIResponse(
         success=True,

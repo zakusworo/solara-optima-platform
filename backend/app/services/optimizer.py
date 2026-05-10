@@ -470,13 +470,18 @@ class UCEDOptimizer:
         # Calculate costs
         total_cost = pl.value(self.model.objective) or 0
         fuel_cost = sum(
-            pl.value(self.variables['p'][(g, t)]) * 0  # Simplified
+            (pl.value(self.variables['p'][(g, t)]) or 0) * request.generators[g].fuel_cost
             for g in range(G) for t in range(T)
         )
-        
-        # Calculate emissions
-        total_emissions = 0  # Calculate from generator outputs
-        
+
+        # Calculate emissions (kg CO2) from per-generator emissions_rate (kg/kWh)
+        total_emissions = sum(
+            (pl.value(self.variables['p'][(g, t)]) or 0) * request.generators[g].emissions_rate
+            for g in range(G) for t in range(T)
+        )
+
+        logger.info(f"Cost breakdown — total: {total_cost:.0f}, fuel: {fuel_cost:.0f}, emissions: {total_emissions:.1f} kg CO2")
+
         return OptimizationResult(
             status=pl.LpStatus[self.model.status],
             total_cost=total_cost,

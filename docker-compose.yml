@@ -85,27 +85,28 @@ services:
     #           count: all
     #           capabilities: [gpu]
 
-  # Celery Worker (Background Tasks)
-  worker:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: solara-optima-worker
-    command: celery -A app.celery worker --loglevel=info
-    environment:
-      - DATABASE_URL=postgresql://user:password@db:5432/solara_optima
-      - REDIS_URL=redis://redis:6379/0
-      - OLLAMA_HOST=http://ollama:11434
-    volumes:
-      - ./backend/app:/app/app
-      - ./data:/app/data
-    depends_on:
-      - db
-      - redis
-      - ollama
-    networks:
-      - solar-network
-    restart: unless-stopped
+  # Celery Worker (Background Tasks) — disabled until app.celery is wired up.
+  # Re-enable by defining a Celery instance in app/celery.py and removing this comment block.
+  # worker:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #   container_name: solara-optima-worker
+  #   command: celery -A app.celery worker --loglevel=info
+  #   environment:
+  #     - DATABASE_URL=postgresql://user:password@db:5432/solara_optima
+  #     - REDIS_URL=redis://redis:6379/0
+  #     - OLLAMA_HOST=http://ollama:11434
+  #   volumes:
+  #     - ./backend/app:/app/app
+  #     - ./data:/app/data
+  #   depends_on:
+  #     - db
+  #     - redis
+  #     - ollama
+  #   networks:
+  #     - solar-network
+  #   restart: unless-stopped
 
 networks:
   solar-network:

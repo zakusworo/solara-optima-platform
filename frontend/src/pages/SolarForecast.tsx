@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Sun, Download, Search, ChevronDown, ChevronUp, Check } from 'lucide-react'
-import axios from 'axios'
 import Plot from 'react-plotly.js'
+import { api } from '../utils/api'
 
 interface PVModule {
   name: string
@@ -66,7 +66,7 @@ export default function SolarForecast() {
   const fetchModules = async (params?: Record<string, any>) => {
     setModulesLoading(true)
     try {
-      const response = await axios.get('http://localhost:8000/api/v1/pv/modules/search', {
+      const response = await api.get('/api/v1/pv/modules/search', {
         params: { limit: 200, ...params },
       })
       setModules(response.data.modules || [])
@@ -109,7 +109,7 @@ export default function SolarForecast() {
         }
       }
 
-      const response = await axios.get('http://localhost:8000/api/v1/forecast/solar', {
+      const response = await api.get('/api/v1/forecast/solar', {
         params: {
           capacity: moduleCapacity,
           hours,
