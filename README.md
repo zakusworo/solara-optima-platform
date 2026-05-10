@@ -256,6 +256,16 @@ Browse 10,000+ CEC modules, filter by manufacturer/technology, and auto-scale pl
 
 | Date | Change |
 |------|--------|
+| **May 2026** | Compose healthchecks across all services; ordered startup via `service_healthy` |
+| **May 2026** | Generator templates extracted to `backend/data/generator_templates.json` (editable without code) |
+| **May 2026** | Synthetic-input AI endpoints now flagged with `data_source: "synthetic"` |
+| **May 2026** | Magic-number constants documented (CBC MIP gap, tropical tilt formula citations) |
+| **May 2026** | CORS restricted to `CORS_ORIGINS` allowlist; `DEBUG=false` default |
+| **May 2026** | Compose secrets moved to `.env` (no plaintext defaults); db port no longer host-exposed |
+| **May 2026** | CEC modules CSV download hardened (`SHA256` verify, 50 MB cap, min-row sanity) |
+| **May 2026** | Bounded LRU + 24h TTL on optimization result store (memory-leak fix) |
+| **May 2026** | Frontend API URLs unified via `utils/api.ts` + `VITE_API_URL` (no more hardcoded `localhost:8000`) |
+| **May 2026** | CI fail-loud: removed `\|\| echo` patterns; Trivy scan now blocks on HIGH/CRITICAL |
 | **Apr 2026** | PV Module Database: CEC search + filter + manual entry + auto-scaling |
 | **Apr 2026** | Auto geolocation: browser GPS → Nominatim → backend fallback |
 | **Apr 2026** | Hourly load profile editor with live stats on Optimization page |
