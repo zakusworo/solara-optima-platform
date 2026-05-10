@@ -1,14 +1,17 @@
 """
 Pydantic schemas for request/response validation
 """
-from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any
+
 from datetime import datetime
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field
 
 
 class GeneratorStatus(str, Enum):
     """Generator operational status"""
+
     ON = "on"
     OFF = "off"
     STARTING = "starting"
@@ -17,10 +20,11 @@ class GeneratorStatus(str, Enum):
 
 class GeneratorData(BaseModel):
     """Generator technical and economic parameters"""
+
     generator_id: int
     name: str
     fuel_type: str = "Natural Gas"
-    
+
     # Technical parameters
     min_output: float = Field(ge=0, description="Minimum output (kW)")
     max_output: float = Field(ge=0, description="Maximum output (kW)")
@@ -28,20 +32,20 @@ class GeneratorData(BaseModel):
     ramp_down: float = Field(ge=0, description="Ramp down rate (kW/hour)")
     min_uptime: int = Field(ge=0, description="Minimum uptime (hours)")
     min_downtime: int = Field(ge=0, description="Minimum downtime (hours)")
-    
+
     # Initial state
     initial_status: int = Field(ge=0, le=1, description="Initial on/off status")
     initial_output: float = Field(ge=0, description="Initial power output (kW)")
-    
+
     # Economic parameters
     startup_cost: float = Field(ge=0, description="Startup cost (Rp)")
     shutdown_cost: float = Field(ge=0, description="Shutdown cost (Rp)")
     no_load_cost: float = Field(ge=0, description="No-load cost (Rp/hour)")
     fuel_cost: float = Field(ge=0, description="Fuel cost (Rp/kWh)")
-    
+
     # Emissions
     emissions_rate: float = Field(ge=0, description="CO2 emissions rate (kg/kWh)")
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -67,10 +71,11 @@ class GeneratorData(BaseModel):
 
 class SolarForecast(BaseModel):
     """Solar PV generation forecast"""
+
     timestamps: List[datetime]
     generation: List[float] = Field(..., description="Expected generation (kW)")
     capacity: float = Field(ge=0, description="Installed capacity (kW)")
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -83,50 +88,80 @@ class SolarForecast(BaseModel):
 
 class BatteryConfig(BaseModel):
     """Battery energy storage configuration"""
+
     capacity: float = Field(ge=0, description="Battery capacity (kWh)")
     power_rating: float = Field(ge=0, description="Power rating (kW)")
-    efficiency: float = Field(ge=0, le=1, default=0.90, description="Round-trip efficiency")
+    efficiency: float = Field(
+        ge=0, le=1, default=0.90, description="Round-trip efficiency"
+    )
     min_soc: float = Field(ge=0, le=1, default=0.10, description="Minimum SOC")
     max_soc: float = Field(ge=0, le=1, default=0.90, description="Maximum SOC")
-    initial_soc: float = Field(ge=0, le=1, default=0.50, description="Initial SOC (kWh)")
-    final_soc: Optional[float] = Field(None, ge=0, le=1, description="Target final SOC (kWh)")
-    degradation_cost: float = Field(ge=0, default=100, description="Degradation cost (Rp/kWh)")
+    initial_soc: float = Field(
+        ge=0, le=1, default=0.50, description="Initial SOC (kWh)"
+    )
+    final_soc: Optional[float] = Field(
+        None, ge=0, le=1, description="Target final SOC (kWh)"
+    )
+    degradation_cost: float = Field(
+        ge=0, default=100, description="Degradation cost (Rp/kWh)"
+    )
 
 
 class OptimizationRequest(BaseModel):
     """Request for UC/ED optimization"""
+
     # Time series data
-    load_profile: List[float] = Field(..., min_length=1, description="Load profile (kW)")
-    timestamps: Optional[List[datetime]] = Field(None, description="Timestamps for load profile")
-    
+    load_profile: List[float] = Field(
+        ..., min_length=1, description="Load profile (kW)"
+    )
+    timestamps: Optional[List[datetime]] = Field(
+        None, description="Timestamps for load profile"
+    )
+
     # Generators
     generators: List[GeneratorData] = Field(..., min_length=1)
-    
+
     # Solar PV
-    solar_forecast: Optional[List[float]] = Field(None, description="Solar generation forecast (kW)")
-    pv_system_capacity: Optional[float] = Field(None, ge=0, description="PV system capacity (kW)")
-    
+    solar_forecast: Optional[List[float]] = Field(
+        None, description="Solar generation forecast (kW)"
+    )
+    pv_system_capacity: Optional[float] = Field(
+        None, ge=0, description="PV system capacity (kW)"
+    )
+
     # Battery storage
     bess_capacity: float = Field(default=0, ge=0, description="Battery capacity (kWh)")
-    bess_power_rating: float = Field(default=0, ge=0, description="Battery power rating (kW)")
+    bess_power_rating: float = Field(
+        default=0, ge=0, description="Battery power rating (kW)"
+    )
     bess_efficiency: float = Field(default=0.90, ge=0, le=1)
     bess_min_soc: float = Field(default=0.10, ge=0, le=1)
     bess_max_soc: float = Field(default=0.90, ge=0, le=1)
     bess_initial_soc: float = Field(default=0.50, ge=0, le=1)
     bess_final_soc: Optional[float] = Field(None, ge=0, le=1)
     bess_degradation_cost: float = Field(default=100, ge=0)
-    
+
     # Market settings
-    tou_prices: Optional[List[float]] = Field(None, description="Time-of-use electricity prices (Rp/kWh)")
-    grid_import_limit: Optional[float] = Field(None, ge=0, description="Max grid import (kW)")
-    grid_export_limit: Optional[float] = Field(None, ge=0, description="Max grid export (kW)")
-    
+    tou_prices: Optional[List[float]] = Field(
+        None, description="Time-of-use electricity prices (Rp/kWh)"
+    )
+    grid_import_limit: Optional[float] = Field(
+        None, ge=0, description="Max grid import (kW)"
+    )
+    grid_export_limit: Optional[float] = Field(
+        None, ge=0, description="Max grid export (kW)"
+    )
+
     # Optimization settings
     allow_load_shedding: bool = Field(default=False, description="Allow load shedding")
-    load_shedding_cost: float = Field(default=10000, ge=0, description="Load shedding penalty (Rp/kWh)")
+    load_shedding_cost: float = Field(
+        default=10000, ge=0, description="Load shedding penalty (Rp/kWh)"
+    )
     solver_name: str = Field(default="cbc", description="MILP solver name")
-    time_limit: int = Field(default=300, ge=1, description="Solver time limit (seconds)")
-    
+    time_limit: int = Field(
+        default=300, ge=1, description="Solver time limit (seconds)"
+    )
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -159,6 +194,7 @@ class OptimizationRequest(BaseModel):
 
 class GeneratorSchedule(BaseModel):
     """Generator dispatch schedule"""
+
     generator_id: int
     status: List[int] = Field(..., description="On/off status (0/1)")
     output: List[float] = Field(..., description="Power output (kW)")
@@ -169,6 +205,7 @@ class GeneratorSchedule(BaseModel):
 
 class BatteryOperation(BaseModel):
     """Battery operation schedule"""
+
     charge: List[float] = Field(..., description="Charging power (kW)")
     discharge: List[float] = Field(..., description="Discharging power (kW)")
     soc: List[float] = Field(..., description="State of charge (kWh)")
@@ -176,6 +213,7 @@ class BatteryOperation(BaseModel):
 
 class OptimizationStatus(str, Enum):
     """Optimization solution status"""
+
     Optimal = "Optimal"
     Feasible = "Feasible"
     Infeasible = "Infeasible"
@@ -186,16 +224,19 @@ class OptimizationStatus(str, Enum):
 
 class OptimizationResult(BaseModel):
     """Optimization result"""
+
     status: OptimizationStatus
     total_cost: float = Field(..., description="Total operational cost (Rp)")
     generator_schedules: List[GeneratorSchedule]
-    solar_output: Optional[List[float]] = Field(None, description="Solar generation (kW)")
+    solar_output: Optional[List[float]] = Field(
+        None, description="Solar generation (kW)"
+    )
     battery_operation: Optional[BatteryOperation] = Field(None)
     load_served: List[float] = Field(..., description="Load served (kW)")
     emissions: float = Field(default=0, description="Total CO2 emissions (kg)")
     solve_time: float = Field(..., description="Solution time (seconds)")
     messages: Optional[List[str]] = Field(None, description="Solver messages")
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -219,11 +260,16 @@ class OptimizationResult(BaseModel):
 
 class ForecastRequest(BaseModel):
     """Request for load or solar forecasting"""
+
     start_date: datetime
     end_date: datetime
-    location: Optional[Dict[str, float]] = Field(None, description="Location coordinates")
-    historical_data: Optional[List[float]] = Field(None, description="Historical load/generation")
-    
+    location: Optional[Dict[str, float]] = Field(
+        None, description="Location coordinates"
+    )
+    historical_data: Optional[List[float]] = Field(
+        None, description="Historical load/generation"
+    )
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -236,13 +282,18 @@ class ForecastRequest(BaseModel):
 
 class SolarForecastResponse(BaseModel):
     """Solar generation forecast response"""
+
     timestamps: List[datetime]
     generation: List[float]
-    irradiance: Optional[List[float]] = Field(None, description="Global horizontal irradiance (W/m²)")
-    temperature: Optional[List[float]] = Field(None, description="Ambient temperature (°C)")
+    irradiance: Optional[List[float]] = Field(
+        None, description="Global horizontal irradiance (W/m²)"
+    )
+    temperature: Optional[List[float]] = Field(
+        None, description="Ambient temperature (°C)"
+    )
     capacity_factor: List[float] = Field(..., description="Capacity factor (0-1)")
     total_generation: float = Field(..., description="Total generation (kWh)")
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -258,13 +309,18 @@ class SolarForecastResponse(BaseModel):
 
 class LoadForecastResponse(BaseModel):
     """Load forecast response"""
+
     timestamps: List[datetime]
     load: List[float]
-    confidence_lower: Optional[List[float]] = Field(None, description="Lower confidence bound")
-    confidence_upper: Optional[List[float]] = Field(None, description="Upper confidence bound")
+    confidence_lower: Optional[List[float]] = Field(
+        None, description="Lower confidence bound"
+    )
+    confidence_upper: Optional[List[float]] = Field(
+        None, description="Upper confidence bound"
+    )
     peak_load: float = Field(..., description="Peak load (kW)")
     total_energy: float = Field(..., description="Total energy (kWh)")
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -278,13 +334,14 @@ class LoadForecastResponse(BaseModel):
 
 class WeatherData(BaseModel):
     """Weather data for solar forecasting"""
+
     timestamps: List[datetime]
     ghi: List[float] = Field(..., description="Global horizontal irradiance (W/m²)")
     dhi: List[float] = Field(..., description="Diffuse horizontal irradiance (W/m²)")
     dni: List[float] = Field(..., description="Direct normal irradiance (W/m²)")
     temperature: List[float] = Field(..., description="Dry bulb temperature (°C)")
     wind_speed: List[float] = Field(..., description="Wind speed (m/s)")
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -300,11 +357,12 @@ class WeatherData(BaseModel):
 
 class APIResponse(BaseModel):
     """Standard API response wrapper"""
+
     success: bool
     data: Optional[Any] = None
     message: Optional[str] = None
     error: Optional[str] = None
-    
+
     class Config:
         json_schema_extra = {
             "example": {

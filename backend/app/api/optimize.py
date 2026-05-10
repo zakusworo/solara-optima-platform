@@ -1,22 +1,19 @@
 """
 Optimization API endpoints
 """
-from fastapi import APIRouter, HTTPException, BackgroundTasks
-from typing import List, Optional
-from loguru import logger
+
 import uuid
 from collections import OrderedDict
 from datetime import datetime, timedelta
 from threading import Lock
 
-from app.models.schemas import (
-    OptimizationRequest,
-    OptimizationResult,
-    APIResponse,
-)
+from fastapi import APIRouter, HTTPException
+from loguru import logger
+
+from app.core.config import settings
+from app.models.schemas import APIResponse, OptimizationRequest, OptimizationResult
 from app.services.optimizer import run_optimization
 from app.services.solar_forecast import SolarForecastService
-from app.core.config import settings
 
 router = APIRouter()
 
@@ -33,8 +30,11 @@ def _evict_stale_results() -> None:
     now = datetime.now()
     with _results_lock:
         # TTL eviction
-        expired = [jid for jid, v in optimization_results.items()
-                   if now - v["timestamp"] > _RESULT_STORE_TTL]
+        expired = [
+            jid
+            for jid, v in optimization_results.items()
+            if now - v["timestamp"] > _RESULT_STORE_TTL
+        ]
         for jid in expired:
             optimization_results.pop(jid, None)
         # Capacity eviction (oldest first)
@@ -42,7 +42,9 @@ def _evict_stale_results() -> None:
             optimization_results.popitem(last=False)
 
 
-def _store_result(job_id: str, request: OptimizationRequest, result: OptimizationResult) -> None:
+def _store_result(
+    job_id: str, request: OptimizationRequest, result: OptimizationResult
+) -> None:
     with _results_lock:
         optimization_results[job_id] = {
             "request": request,
@@ -57,7 +59,7 @@ def _store_result(job_id: str, request: OptimizationRequest, result: Optimizatio
 async def run_optimization_endpoint(request: OptimizationRequest):
     """
     Run unit commitment and economic dispatch optimization
-    
+
     Solves the MILP problem to minimize operational costs while meeting:
     - Load demand
     - Reserve requirements
@@ -66,24 +68,32 @@ async def run_optimization_endpoint(request: OptimizationRequest):
     - Battery storage optimization
     """
     try:
-        logger.info(f"Starting optimization: {len(request.load_profile)} periods, {len(request.generators)} generators")
-        
+        logger.info(
+            f"Starting optimization: {len(request.load_profile)} periods, {len(request.generators)} generators"
+        )
+
         # Validate request
         if len(request.load_profile) < 2:
-            raise HTTPException(status_code=400, detail="Load profile must have at least 2 time periods")
-        
+            raise HTTPException(
+                status_code=400, detail="Load profile must have at least 2 time periods"
+            )
+
         if len(request.generators) < 1:
-            raise HTTPException(status_code=400, detail="At least one generator is required")
-        
+            raise HTTPException(
+                status_code=400, detail="At least one generator is required"
+            )
+
         # Run optimization
         result = run_optimization(request)
-        
+
         # Store result
         job_id = str(uuid.uuid4())
         _store_result(job_id, request, result)
 
-        logger.info(f"Optimization completed: {result.status}, Cost: Rp {result.total_cost:,.0f}")
-        
+        logger.info(
+            f"Optimization completed: {result.status}, Cost: Rp {result.total_cost:,.0f}"
+        )
+
         return APIResponse(
             success=True,
             data={
@@ -92,7 +102,7 @@ async def run_optimization_endpoint(request: OptimizationRequest):
             },
             message=f"Optimization completed successfully. Total cost: Rp {result.total_cost:,.0f}",
         )
-        
+
     except Exception as e:
         logger.error(f"Optimization failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Optimization failed: {str(e)}")
@@ -121,7 +131,7 @@ async def get_optimization_results(job_id: str):
 async def run_optimization_with_solar(request: OptimizationRequest):
     """
     Run optimization with automatic solar forecasting
-    
+
     Automatically generates solar forecast based on:
     - Location (default: Bandung)
     - Weather data
@@ -129,25 +139,27 @@ async def run_optimization_with_solar(request: OptimizationRequest):
     """
     try:
         logger.info("Running optimization with solar forecasting")
-        
+
         # Generate solar forecast if not provided
         if request.solar_forecast is None and request.pv_system_capacity:
             solar_service = SolarForecastService()
-            
+
             # Determine forecast horizon from load profile
             horizon_hours = len(request.load_profile) * settings.TIME_RESOLUTION
-            
+
             forecast = solar_service.generate_forecast(
                 capacity=request.pv_system_capacity,
                 horizon_hours=horizon_hours,
             )
-            
-            request.solar_forecast = forecast['generation']
-            logger.info(f"Generated solar forecast: {sum(forecast['generation']):.1f} kWh total")
-        
+
+            request.solar_forecast = forecast["generation"]
+            logger.info(
+                f"Generated solar forecast: {sum(forecast['generation']):.1f} kWh total"
+            )
+
         # Run optimization
         result = run_optimization(request)
-        
+
         job_id = str(uuid.uuid4())
         _store_result(job_id, request, result)
 
@@ -159,7 +171,7 @@ async def run_optimization_with_solar(request: OptimizationRequest):
             },
             message=f"Optimization with solar completed. Cost: Rp {result.total_cost:,.0f}",
         )
-        
+
     except Exception as e:
         logger.error(f"Optimization with solar failed: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -168,7 +180,7 @@ async def run_optimization_with_solar(request: OptimizationRequest):
 @router.get("/status")
 async def get_solver_status():
     """Get solver configuration and availability"""
-    
+
     return APIResponse(
         success=True,
         data={
@@ -211,7 +223,7 @@ async def list_optimization_results(limit: int = 10):
             key=lambda x: x[1]["timestamp"],
             reverse=True,
         )[:limit]
-    
+
     return APIResponse(
         success=True,
         data=[

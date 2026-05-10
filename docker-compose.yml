@@ -9,8 +9,12 @@ services:
     container_name: solara-optima-backend
     ports:
       - "8000:8000"
+    env_file:
+      - ./backend/.env
     environment:
-      - DATABASE_URL=postgresql://user:password@db:5432/solara_optima
+      # Inside the compose network the hostnames are the service names.
+      # Credentials come from .env (POSTGRES_USER / POSTGRES_PASSWORD).
+      - DATABASE_URL=postgresql://${POSTGRES_USER:?set POSTGRES_USER in .env}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/${POSTGRES_DB:?set POSTGRES_DB in .env}
       - REDIS_URL=redis://redis:6379/0
       - OLLAMA_HOST=http://ollama:11434
     volumes:
@@ -37,18 +41,19 @@ services:
       - solar-network
     restart: unless-stopped
 
-  # PostgreSQL Database
+  # PostgreSQL Database — credentials must come from .env (no defaults).
   db:
     image: postgres:15-alpine
     container_name: solara-optima-db
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: solara_optima
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+    # Port not exposed to host by default. Uncomment for local DB tooling.
+    # ports:
+    #   - "5432:5432"
     networks:
       - solar-network
     restart: unless-stopped

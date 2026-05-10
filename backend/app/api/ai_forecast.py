@@ -1,13 +1,19 @@
 """
 AI Forecasting API endpoints
 """
-from fastapi import APIRouter, HTTPException
-from typing import Optional, Dict, List
-from datetime import datetime
+
+from typing import Dict, List, Optional
+
+from fastapi import APIRouter, HTTPException, Query
 from loguru import logger
 
-from app.models.schemas import LoadForecastResponse, APIResponse
+from app.models.schemas import APIResponse
 from app.services.ai_forecast import AIForecastingService, generate_ai_load_forecast
+
+# Hard caps on the comma-separated forecast input to prevent DoS via
+# huge query strings or excessively long forecast horizons.
+_MAX_FORECAST_INPUT_CHARS = 8_192
+_MAX_FORECAST_VALUES = 168  # one week of hourly data
 
 router = APIRouter()
 
@@ -19,39 +25,43 @@ async def get_ai_load_forecast(
 ):
     """
     Generate load forecast using AI/LLM
-    
+
     Uses Ollama with pattern recognition on historical data.
     Falls back to statistical methods if Ollama unavailable.
     """
     try:
-        logger.info(f"Generating AI load forecast: {hours}h, model={model or 'default'}")
-        
+        logger.info(
+            f"Generating AI load forecast: {hours}h, model={model or 'default'}"
+        )
+
         # Generate synthetic historical data (replace with real data)
         historical = generate_synthetic_load_data(days=7)
-        
+
         # Generate forecast
         service = AIForecastingService(model=model)
-        
+
         if not service.check_availability():
             return APIResponse(
                 success=True,
                 data={
-                    'forecast': historical[-hours:] if len(historical) >= hours else historical,
-                    'confidence': 0.5,
-                    'method': 'Fallback (Ollama unavailable)',
-                    'model': 'statistical',
+                    "forecast": (
+                        historical[-hours:] if len(historical) >= hours else historical
+                    ),
+                    "confidence": 0.5,
+                    "method": "Fallback (Ollama unavailable)",
+                    "model": "statistical",
                 },
                 message="Ollama not available, using fallback method",
             )
-        
+
         result = service.generate_load_forecast(historical, hours)
-        
+
         return APIResponse(
             success=True,
             data=result,
             message=f"AI forecast generated with {result['model']}",
         )
-        
+
     except Exception as e:
         logger.error(f"AI load forecast failed: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -66,7 +76,7 @@ async def get_custom_ai_load_forecast(
 ):
     """
     Generate load forecast from custom historical data
-    
+
     Provide your own historical load data for better accuracy.
     """
     try:
@@ -75,22 +85,24 @@ async def get_custom_ai_load_forecast(
                 status_code=400,
                 detail="At least 24 hours of historical data required",
             )
-        
-        logger.info(f"Custom AI forecast: {len(historical_data)} data points, {hours}h horizon")
-        
+
+        logger.info(
+            f"Custom AI forecast: {len(historical_data)} data points, {hours}h horizon"
+        )
+
         result = await generate_ai_load_forecast(
             historical_data=historical_data,
             horizon_hours=hours,
             context=context,
             model=model,
         )
-        
+
         return APIResponse(
             success=True,
             data=result,
             message=f"Custom forecast generated (confidence: {result['confidence']:.2f})",
         )
-        
+
     except Exception as e:
         logger.error(f"Custom AI forecast failed: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -98,38 +110,59 @@ async def get_custom_ai_load_forecast(
 
 @router.get("/ai/solar/refine", response_model=APIResponse)
 async def refine_solar_forecast(
-    pvlib_forecast: str,  # Comma-separated values
-    cloud_cover: Optional[int] = None,
-    temperature: Optional[float] = None,
-    model: Optional[str] = None,
+    pvlib_forecast: str = Query(
+        ...,
+        max_length=_MAX_FORECAST_INPUT_CHARS,
+        description="Comma-separated pvlib forecast values (kW)",
+    ),
+    cloud_cover: Optional[int] = Query(None, ge=0, le=100),
+    temperature: Optional[float] = Query(None, ge=-50, le=60),
+    model: Optional[str] = Query(None, max_length=64),
 ):
     """
     Refine pvlib solar forecast using AI weather analysis
-    
+
     Adjusts base pvlib forecast based on cloud cover and temperature.
     """
     try:
-        # Parse pvlib forecast
-        forecast_values = [float(x.strip()) for x in pvlib_forecast.split(',')]
-        
+        # Parse pvlib forecast with bounds enforcement
+        try:
+            forecast_values = [
+                float(x.strip()) for x in pvlib_forecast.split(",") if x.strip()
+            ]
+        except ValueError:
+            raise HTTPException(
+                status_code=400,
+                detail="pvlib_forecast must contain only numeric values",
+            )
+        if not forecast_values:
+            raise HTTPException(status_code=400, detail="pvlib_forecast is empty")
+        if len(forecast_values) > _MAX_FORECAST_VALUES:
+            raise HTTPException(
+                status_code=400,
+                detail=f"pvlib_forecast exceeds max {_MAX_FORECAST_VALUES} values",
+            )
+
         # Build weather context
         weather = {}
         if cloud_cover is not None:
-            weather['cloud_cover'] = cloud_cover
+            weather["cloud_cover"] = cloud_cover
         if temperature is not None:
-            weather['temperature'] = temperature
-        
+            weather["temperature"] = temperature
+
         logger.info(f"Refining solar forecast with AI: {len(forecast_values)} values")
-        
+
         service = AIForecastingService(model=model)
         result = service.generate_solar_forecast_refinement(forecast_values, weather)
-        
+
         return APIResponse(
             success=True,
             data=result,
             message="Solar forecast refined with AI weather analysis",
         )
-        
+
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Solar refinement failed: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -141,7 +174,7 @@ async def compare_forecasting_methods(
 ):
     """
     Compare AI forecasting with traditional methods
-    
+
     Shows differences between:
     - AI/LLM pattern recognition
     - Simple average
@@ -149,30 +182,30 @@ async def compare_forecasting_methods(
     """
     try:
         logger.info("Comparing forecasting methods")
-        
+
         # Generate synthetic historical data
         historical = generate_synthetic_load_data(days=7)
-        
+
         service = AIForecastingService()
-        
+
         if not service.check_availability():
             return APIResponse(
                 success=True,
                 data={
-                    'error': 'Ollama not available',
-                    'fallback_only': True,
+                    "error": "Ollama not available",
+                    "fallback_only": True,
                 },
                 message="Cannot compare: Ollama unavailable",
             )
-        
+
         comparison = service.compare_forecasting_methods(historical, hours)
-        
+
         return APIResponse(
             success=True,
             data=comparison,
             message="Forecasting methods compared",
         )
-        
+
     except Exception as e:
         logger.error(f"Method comparison failed: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -181,21 +214,25 @@ async def compare_forecasting_methods(
 @router.get("/ai/status", response_model=APIResponse)
 async def get_ai_status():
     """Check AI forecasting service status"""
-    
+
     service = AIForecastingService()
     available = service.check_availability()
-    
+
     return APIResponse(
         success=True,
         data={
-            'ollama_available': available,
-            'model': service.model,
-            'host': service.host,
-            'capabilities': [
-                'Load forecasting',
-                'Solar forecast refinement',
-                'Method comparison',
-            ] if available else [],
+            "ollama_available": available,
+            "model": service.model,
+            "host": service.host,
+            "capabilities": (
+                [
+                    "Load forecasting",
+                    "Solar forecast refinement",
+                    "Method comparison",
+                ]
+                if available
+                else []
+            ),
         },
         message="AI service ready" if available else "Ollama not available",
     )
@@ -204,14 +241,14 @@ async def get_ai_status():
 def generate_synthetic_load_data(days: int = 7) -> List[float]:
     """Generate synthetic load data for testing"""
     import numpy as np
-    
+
     hours = days * 24
     load = []
-    
+
     for h in range(hours):
         # Base load with daily pattern
         hour_of_day = h % 24
-        
+
         # Typical tropical commercial load profile
         if 0 <= hour_of_day < 6:
             base = 60 + np.random.normal(0, 5)
@@ -227,12 +264,12 @@ def generate_synthetic_load_data(days: int = 7) -> List[float]:
             base = 110 + np.random.normal(0, 8)
         else:
             base = 70 + np.random.normal(0, 5)
-        
+
         # Add weekly pattern (lower on weekends)
         day_of_week = h // 24
         if day_of_week % 7 >= 5:  # Weekend
             base *= 0.7
-        
+
         load.append(max(0, base))
-    
+
     return load

@@ -1,17 +1,20 @@
 """
 Logging configuration using Loguru
 """
-from loguru import logger
+
 import sys
+
+from loguru import logger
+
 from app.core.config import settings
 
 
 def setup_logging():
     """Configure application logging"""
-    
+
     # Remove default handler
     logger.remove()
-    
+
     # Add console handler
     logger.add(
         sys.stderr,
@@ -20,7 +23,7 @@ def setup_logging():
         backtrace=True,
         diagnose=True,
     )
-    
+
     # Add file handler if configured
     if settings.LOG_FILE:
         logger.add(
@@ -31,5 +34,5 @@ def setup_logging():
             retention="7 days",
             compression="zip",
         )
-    
+
     logger.info("Logging configured successfully")

@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""
 """Test script for Solara Optima Platform API"""
-"""
 import sys
 import json
 

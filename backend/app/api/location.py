@@ -2,12 +2,12 @@
 Location management API with geocoding and reverse geocoding
 Uses Nominatim (OpenStreetMap) - free, no API key required
 """
-from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel
-from typing import Optional
+
 import requests
+from fastapi import APIRouter, HTTPException, Query
+from geopy.exc import GeocoderServiceError, GeocoderTimedOut
 from geopy.geocoders import Nominatim
-from geopy.exc import GeocoderTimedOut, GeocoderServiceError
+from pydantic import BaseModel
 
 from app.core.config import settings
 
@@ -100,12 +100,14 @@ async def geocode_address(
             }
         results = []
         for loc in location[:5]:
-            results.append({
-                "name": loc.address,
-                "latitude": loc.latitude,
-                "longitude": loc.longitude,
-                "altitude": getattr(loc, 'altitude', 0) or 0,
-            })
+            results.append(
+                {
+                    "name": loc.address,
+                    "latitude": loc.latitude,
+                    "longitude": loc.longitude,
+                    "altitude": getattr(loc, "altitude", 0) or 0,
+                }
+            )
         return {
             "success": True,
             "data": results,
@@ -114,13 +116,15 @@ async def geocode_address(
     except GeocoderTimedOut:
         raise HTTPException(status_code=504, detail="Geocoding timed out")
     except GeocoderServiceError as e:
-        raise HTTPException(status_code=503, detail=f"Geocoding service error: {str(e)}")
+        raise HTTPException(
+            status_code=503, detail=f"Geocoding service error: {str(e)}"
+        )
 
 
 @router.get("/reverse")
 async def reverse_geocode(
     lat: float = Query(..., description="Latitude"),
-    lon: float = Query(..., description="Longitude")
+    lon: float = Query(..., description="Longitude"),
 ):
     """Reverse geocode lat/lon to address using Nominatim"""
     try:
@@ -144,13 +148,15 @@ async def reverse_geocode(
     except GeocoderTimedOut:
         raise HTTPException(status_code=504, detail="Reverse geocoding timed out")
     except GeocoderServiceError as e:
-        raise HTTPException(status_code=503, detail=f"Geocoding service error: {str(e)}")
+        raise HTTPException(
+            status_code=503, detail=f"Geocoding service error: {str(e)}"
+        )
 
 
 @router.get("/timezone")
 async def get_timezone(
     lat: float = Query(..., description="Latitude"),
-    lon: float = Query(..., description="Longitude")
+    lon: float = Query(..., description="Longitude"),
 ):
     """Get timezone from coordinates using free API"""
     try:
@@ -180,7 +186,7 @@ async def get_timezone(
 @router.get("/search")
 async def search_places(
     q: str = Query(..., description="Search query"),
-    limit: int = Query(5, description="Max results", ge=1, le=10)
+    limit: int = Query(5, description="Max results", ge=1, le=10),
 ):
     """Search places interactively via Nominatim"""
     try:
@@ -200,13 +206,15 @@ async def search_places(
         resp.raise_for_status()
         results = []
         for item in resp.json():
-            results.append({
-                "name": item.get("display_name", ""),
-                "latitude": float(item.get("lat", 0)),
-                "longitude": float(item.get("lon", 0)),
-                "type": item.get("type", ""),
-                "class": item.get("class", ""),
-            })
+            results.append(
+                {
+                    "name": item.get("display_name", ""),
+                    "latitude": float(item.get("lat", 0)),
+                    "longitude": float(item.get("lon", 0)),
+                    "type": item.get("type", ""),
+                    "class": item.get("class", ""),
+                }
+            )
         return {
             "success": True,
             "data": results,

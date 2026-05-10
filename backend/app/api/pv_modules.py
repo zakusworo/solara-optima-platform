@@ -1,8 +1,10 @@
 """
 PV Module API endpoints - browse and select PV modules from CEC database
 """
+
+from typing import Optional
+
 from fastapi import APIRouter, HTTPException, Query
-from typing import List, Optional
 from loguru import logger
 
 from app.services.pv_module_db import get_pv_module_db
