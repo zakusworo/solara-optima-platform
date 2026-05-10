@@ -21,11 +21,20 @@ services:
       - ./backend/app:/app/app
       - ./data:/app/data
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - solar-network
     restart: unless-stopped
+    healthcheck:
+      # /health endpoint is defined in app/main.py.
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health', timeout=3).status==200 else 1)\""]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   # Frontend
   frontend:
@@ -36,10 +45,17 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - solar-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:3000/ > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   # PostgreSQL Database — credentials must come from .env (no defaults).
   db:
@@ -57,6 +73,12 @@ services:
     networks:
       - solar-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   # Redis Cache
   redis:
@@ -69,6 +91,12 @@ services:
     networks:
       - solar-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
 
   # Ollama (AI Models)
   ollama:
@@ -81,6 +109,13 @@ services:
     networks:
       - solar-network
     restart: unless-stopped
+    healthcheck:
+      # Ollama serves /api/tags as a lightweight liveness probe.
+      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
     # Uncomment for GPU support
     # deploy:
     #   resources:
