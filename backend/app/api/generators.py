@@ -2,107 +2,70 @@
 Generators API endpoints - Manage generator fleet
 """
 
-from typing import List
+import json
+from typing import Dict, List
 
 from fastapi import APIRouter, HTTPException
 from loguru import logger
 
+from app.core.config import settings
 from app.models.schemas import APIResponse, GeneratorData
 
 router = APIRouter()
 
-# In-memory generator templates (use database in production)
-generator_templates = {
-    "diesel_small": {
-        "name": "Small Diesel Generator",
-        "fuel_type": "Diesel",
-        "min_output": 5,
-        "max_output": 50,
-        "ramp_up": 25,
-        "ramp_down": 25,
-        "min_uptime": 1,
-        "min_downtime": 1,
-        "startup_cost": 100000,
-        "shutdown_cost": 0,
-        "no_load_cost": 25000,
-        "fuel_cost": 1200,
-        "emissions_rate": 0.7,
-    },
-    "diesel_medium": {
-        "name": "Medium Diesel Generator",
-        "fuel_type": "Diesel",
-        "min_output": 50,
-        "max_output": 200,
-        "ramp_up": 50,
-        "ramp_down": 50,
-        "min_uptime": 2,
-        "min_downtime": 2,
-        "startup_cost": 300000,
-        "shutdown_cost": 0,
-        "no_load_cost": 75000,
-        "fuel_cost": 1100,
-        "emissions_rate": 0.65,
-    },
-    "gas_turbine": {
-        "name": "Gas Turbine",
-        "fuel_type": "Natural Gas",
-        "min_output": 10,
-        "max_output": 100,
-        "ramp_up": 50,
-        "ramp_down": 50,
-        "min_uptime": 2,
-        "min_downtime": 2,
-        "startup_cost": 500000,
-        "shutdown_cost": 0,
-        "no_load_cost": 50000,
-        "fuel_cost": 800,
-        "emissions_rate": 0.45,
-    },
-    "coal_small": {
-        "name": "Small Coal Plant",
-        "fuel_type": "Coal",
-        "min_output": 50,
-        "max_output": 500,
-        "ramp_up": 25,
-        "ramp_down": 25,
-        "min_uptime": 8,
-        "min_downtime": 8,
-        "startup_cost": 2000000,
-        "shutdown_cost": 500000,
-        "no_load_cost": 200000,
-        "fuel_cost": 500,
-        "emissions_rate": 0.9,
-    },
-    "biomass": {
-        "name": "Biomass Generator",
-        "fuel_type": "Biomass",
-        "min_output": 20,
-        "max_output": 150,
-        "ramp_up": 30,
-        "ramp_down": 30,
-        "min_uptime": 4,
-        "min_downtime": 4,
-        "startup_cost": 400000,
-        "shutdown_cost": 0,
-        "no_load_cost": 60000,
-        "fuel_cost": 600,
-        "emissions_rate": 0.15,  # Carbon neutral-ish
-    },
-}
+# Generator templates and Indonesia-market presets are defined in
+# backend/data/generator_templates.json so non-developers can edit them
+# without touching code. Loaded once at import.
+_TEMPLATES_FILE = settings.BASE_DIR / "data" / "generator_templates.json"
+
+
+def _load_template_data() -> Dict[str, Dict]:
+    try:
+        raw = json.loads(_TEMPLATES_FILE.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        logger.error(f"Generator templates file missing: {_TEMPLATES_FILE}")
+        return {"templates": {}, "presets": {}}
+    except json.JSONDecodeError as e:
+        logger.error(f"Generator templates file is not valid JSON: {e}")
+        return {"templates": {}, "presets": {}}
+    return {
+        "templates": raw.get("templates", {}),
+        "presets": raw.get("presets", {}),
+    }
+
+
+_data = _load_template_data()
+generator_templates: Dict[str, Dict] = _data["templates"]
+_presets_raw: Dict[str, Dict] = _data["presets"]
+
+
+def _expand_preset(preset: Dict) -> Dict:
+    """Inline generator templates referenced by ID into the preset response."""
+    template_ids = preset.get("generator_template_ids", [])
+    expanded_generators = []
+    for idx, template_id in enumerate(template_ids):
+        if template_id not in generator_templates:
+            logger.warning(
+                f"Preset references unknown generator template '{template_id}'"
+            )
+            continue
+        expanded_generators.append(
+            {**generator_templates[template_id], "generator_id": idx}
+        )
+    return {
+        "name": preset.get("name"),
+        "description": preset.get("description"),
+        "generators": expanded_generators,
+        "solar_capacity": preset.get("solar_capacity"),
+        "battery_capacity": preset.get("battery_capacity"),
+    }
 
 
 @router.get("/templates", response_model=APIResponse)
 async def get_generator_templates():
     """Get available generator templates for Indonesian market"""
 
-    templates = []
-    for key, data in generator_templates.items():
-        templates.append(
-            {
-                "id": key,
-                **data,
-            }
-        )
+    templates = [{"id": key, **data} for key, data in generator_templates.items()]
 
     return APIResponse(
         success=True,
@@ -161,49 +124,11 @@ async def get_indonesia_presets():
     """
     Get generator presets optimized for Indonesian market
 
-    Includes typical PLN and IPP configurations with IDR pricing
+    Includes typical PLN and IPP configurations with IDR pricing.
+    Edit backend/data/generator_templates.json to add or modify presets.
     """
 
-    presets = {
-        "pln_small_island": {
-            "name": "Small Island System (PLN)",
-            "description": "Typical small island diesel + solar hybrid",
-            "generators": [
-                {**generator_templates["diesel_medium"], "generator_id": 0},
-                {**generator_templates["diesel_small"], "generator_id": 1},
-            ],
-            "solar_capacity": 100,  # kW
-            "battery_capacity": 200,  # kWh
-        },
-        "industrial_cogen": {
-            "name": "Industrial Cogeneration",
-            "description": "Factory with gas turbine and backup diesel",
-            "generators": [
-                {**generator_templates["gas_turbine"], "generator_id": 0},
-                {**generator_templates["diesel_medium"], "generator_id": 1},
-            ],
-            "solar_capacity": 50,
-            "battery_capacity": 100,
-        },
-        "commercial_rooftop": {
-            "name": "Commercial Building + Rooftop Solar",
-            "description": "Office building with solar and diesel backup",
-            "generators": [
-                {**generator_templates["diesel_small"], "generator_id": 0},
-            ],
-            "solar_capacity": 200,
-            "battery_capacity": 150,
-        },
-        "rural_microgrid": {
-            "name": "Rural Microgrid",
-            "description": "Village microgrid with diesel + solar + battery",
-            "generators": [
-                {**generator_templates["diesel_small"], "generator_id": 0},
-            ],
-            "solar_capacity": 75,
-            "battery_capacity": 300,
-        },
-    }
+    presets = {key: _expand_preset(preset) for key, preset in _presets_raw.items()}
 
     return APIResponse(
         success=True,

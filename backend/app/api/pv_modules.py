@@ -45,8 +45,14 @@ async def search_modules(
     - efficiency
     - area, cells_in_series
     """
+    db = get_pv_module_db()
+    if db.df is None:
+        # Database failed to load (download error, parse failure, etc).
+        raise HTTPException(
+            status_code=503,
+            detail="PV module database is not available — try again shortly",
+        )
     try:
-        db = get_pv_module_db()
         results = db.search_modules(
             query=q,
             manufacturer=manufacturer,
@@ -55,13 +61,17 @@ async def search_modules(
             pmax=pmax,
             limit=limit,
         )
-        return {
-            "count": len(results),
-            "modules": results,
-        }
+    except (ValueError, TypeError, KeyError) as e:
+        # Bad input that slipped past Query() validators.
+        logger.warning(f"PV module search rejected bad input: {e}")
+        raise HTTPException(status_code=400, detail=f"Invalid search parameters: {e}")
     except Exception as e:
         logger.error(f"PV module search failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Search failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Search failed due to server error")
+    return {
+        "count": len(results),
+        "modules": results,
+    }
 
 
 @router.get("/modules/{module_name}")

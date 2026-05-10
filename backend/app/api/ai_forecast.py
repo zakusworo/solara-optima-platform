@@ -34,10 +34,12 @@ async def get_ai_load_forecast(
             f"Generating AI load forecast: {hours}h, model={model or 'default'}"
         )
 
-        # Generate synthetic historical data (replace with real data)
+        # WARNING: this endpoint feeds the model SYNTHETIC historical data
+        # (no real meter feed wired up). Every response is flagged with
+        # data_source="synthetic" so callers don't mistake it for production
+        # forecasts. Use POST /ai/load/custom to supply real historical data.
         historical = generate_synthetic_load_data(days=7)
 
-        # Generate forecast
         service = AIForecastingService(model=model)
 
         if not service.check_availability():
@@ -50,16 +52,24 @@ async def get_ai_load_forecast(
                     "confidence": 0.5,
                     "method": "Fallback (Ollama unavailable)",
                     "model": "statistical",
+                    "data_source": "synthetic",
                 },
-                message="Ollama not available, using fallback method",
+                message=(
+                    "Ollama not available — returning synthetic fallback. "
+                    "Use POST /ai/load/custom with real historical data for production use."
+                ),
             )
 
         result = service.generate_load_forecast(historical, hours)
+        result["data_source"] = "synthetic"
 
         return APIResponse(
             success=True,
             data=result,
-            message=f"AI forecast generated with {result['model']}",
+            message=(
+                f"AI forecast generated with {result['model']} from SYNTHETIC input — "
+                "use POST /ai/load/custom with real data for production use"
+            ),
         )
 
     except Exception as e:
@@ -183,7 +193,8 @@ async def compare_forecasting_methods(
     try:
         logger.info("Comparing forecasting methods")
 
-        # Generate synthetic historical data
+        # NOTE: synthetic input data — comparison shows method differences,
+        # not absolute accuracy on real meter data.
         historical = generate_synthetic_load_data(days=7)
 
         service = AIForecastingService()
@@ -194,16 +205,19 @@ async def compare_forecasting_methods(
                 data={
                     "error": "Ollama not available",
                     "fallback_only": True,
+                    "data_source": "synthetic",
                 },
                 message="Cannot compare: Ollama unavailable",
             )
 
         comparison = service.compare_forecasting_methods(historical, hours)
+        if isinstance(comparison, dict):
+            comparison["data_source"] = "synthetic"
 
         return APIResponse(
             success=True,
             data=comparison,
-            message="Forecasting methods compared",
+            message="Forecasting methods compared on SYNTHETIC input data",
         )
 
     except Exception as e:

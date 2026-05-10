@@ -1,0 +1,109 @@
+{
+  "templates": {
+    "diesel_small": {
+      "name": "Small Diesel Generator",
+      "fuel_type": "Diesel",
+      "min_output": 5,
+      "max_output": 50,
+      "ramp_up": 25,
+      "ramp_down": 25,
+      "min_uptime": 1,
+      "min_downtime": 1,
+      "startup_cost": 100000,
+      "shutdown_cost": 0,
+      "no_load_cost": 25000,
+      "fuel_cost": 1200,
+      "emissions_rate": 0.7
+    },
+    "diesel_medium": {
+      "name": "Medium Diesel Generator",
+      "fuel_type": "Diesel",
+      "min_output": 50,
+      "max_output": 200,
+      "ramp_up": 50,
+      "ramp_down": 50,
+      "min_uptime": 2,
+      "min_downtime": 2,
+      "startup_cost": 300000,
+      "shutdown_cost": 0,
+      "no_load_cost": 75000,
+      "fuel_cost": 1100,
+      "emissions_rate": 0.65
+    },
+    "gas_turbine": {
+      "name": "Gas Turbine",
+      "fuel_type": "Natural Gas",
+      "min_output": 10,
+      "max_output": 100,
+      "ramp_up": 50,
+      "ramp_down": 50,
+      "min_uptime": 2,
+      "min_downtime": 2,
+      "startup_cost": 500000,
+      "shutdown_cost": 0,
+      "no_load_cost": 50000,
+      "fuel_cost": 800,
+      "emissions_rate": 0.45
+    },
+    "coal_small": {
+      "name": "Small Coal Plant",
+      "fuel_type": "Coal",
+      "min_output": 50,
+      "max_output": 500,
+      "ramp_up": 25,
+      "ramp_down": 25,
+      "min_uptime": 8,
+      "min_downtime": 8,
+      "startup_cost": 2000000,
+      "shutdown_cost": 500000,
+      "no_load_cost": 200000,
+      "fuel_cost": 500,
+      "emissions_rate": 0.9
+    },
+    "biomass": {
+      "name": "Biomass Generator",
+      "fuel_type": "Biomass",
+      "min_output": 20,
+      "max_output": 150,
+      "ramp_up": 30,
+      "ramp_down": 30,
+      "min_uptime": 4,
+      "min_downtime": 4,
+      "startup_cost": 400000,
+      "shutdown_cost": 0,
+      "no_load_cost": 60000,
+      "fuel_cost": 600,
+      "emissions_rate": 0.15
+    }
+  },
+  "presets": {
+    "pln_small_island": {
+      "name": "Small Island System (PLN)",
+      "description": "Typical small island diesel + solar hybrid",
+      "generator_template_ids": ["diesel_medium", "diesel_small"],
+      "solar_capacity": 100,
+      "battery_capacity": 200
+    },
+    "industrial_cogen": {
+      "name": "Industrial Cogeneration",
+      "description": "Factory with gas turbine and backup diesel",
+      "generator_template_ids": ["gas_turbine", "diesel_medium"],
+      "solar_capacity": 50,
+      "battery_capacity": 100
+    },
+    "commercial_rooftop": {
+      "name": "Commercial Building + Rooftop Solar",
+      "description": "Office building with solar and diesel backup",
+      "generator_template_ids": ["diesel_small"],
+      "solar_capacity": 200,
+      "battery_capacity": 150
+    },
+    "rural_microgrid": {
+      "name": "Rural Microgrid",
+      "description": "Village microgrid with diesel + solar + battery",
+      "generator_template_ids": ["diesel_small"],
+      "solar_capacity": 75,
+      "battery_capacity": 300
+    }
+  }
+}

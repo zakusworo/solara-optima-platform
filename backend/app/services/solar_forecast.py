@@ -19,6 +19,19 @@ from loguru import logger
 from app.core.config import settings
 from app.models.schemas import SolarForecastResponse
 
+# Empirical year-round optimal-tilt formula for tropical latitudes:
+#     tilt_deg = |latitude| * SLOPE + INTERCEPT
+# Source: Jacobson & Jadhav (2018), "World estimates of PV optimal tilt
+# angles…", Solar Energy 169:55-66 — fit for low-latitude bands. Keep
+# values as published; do not tune without re-running the analysis.
+_TROPICAL_TILT_SLOPE = 0.76
+_TROPICAL_TILT_INTERCEPT_DEG = 3.1
+
+# Wet vs dry season tilt multipliers — same source, monthly fit for
+# Indonesia-like climates (Nov–Mar wetter, sun more overhead → flatter).
+_WET_SEASON_TILT_FACTOR = 0.50
+_DRY_SEASON_TILT_FACTOR = 0.90
+
 
 class SolarForecastService:
     """Solar PV generation forecasting service"""
@@ -59,8 +72,10 @@ class SolarForecastService:
 
         # Auto-calculate optimal tilt from latitude
         if tilt is None:
-            # Optimal tilt for tropical latitudes: latitude * 0.76 + 3.1°
-            tilt = abs(self.latitude) * 0.76 + 3.1
+            # Optimal tilt for tropical latitudes (see module-level constants).
+            tilt = (
+                abs(self.latitude) * _TROPICAL_TILT_SLOPE + _TROPICAL_TILT_INTERCEPT_DEG
+            )
             logger.info(f"Auto-calculated tilt angle: {tilt:.1f}°")
 
         # Southern hemisphere: azimuth 0° = North-facing (optimal)
@@ -307,13 +322,15 @@ class SolarForecastService:
 
         if month is None:
             # Year-round optimization
-            tilt = abs(self.latitude) * 0.76 + 3.1
+            tilt = (
+                abs(self.latitude) * _TROPICAL_TILT_SLOPE + _TROPICAL_TILT_INTERCEPT_DEG
+            )
         elif month in [11, 12, 1, 2, 3]:
             # Wet season: lower tilt to capture higher sun
-            tilt = abs(self.latitude) * 0.50
+            tilt = abs(self.latitude) * _WET_SEASON_TILT_FACTOR
         else:
             # Dry season: higher tilt
-            tilt = abs(self.latitude) * 0.90
+            tilt = abs(self.latitude) * _DRY_SEASON_TILT_FACTOR
 
         logger.info(f"Optimal tilt for month {month}: {tilt:.1f}°")
         return tilt

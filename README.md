@@ -10,7 +10,7 @@
 
 A modern platform for **Unit Commitment & Economic Dispatch (UC/ED)** optimization with deep integration of **solar PV forecasting**, **battery storage scheduling**, and **multi-agent AI forecasting**. Built specifically for Indonesian energy markets with real-time pvlib physics-based generation modeling and Ollama-powered LLM agents.
 
-**Live Demo**: https://github.com/zakusworo/solara-optima-platform
+**Repository**: https://github.com/zakusworo/solara-optima-platform
 
 ---
 
@@ -141,15 +141,19 @@ A modern platform for **Unit Commitment & Economic Dispatch (UC/ED)** optimizati
 |--------|----------|-------------|
 | `POST` | `/api/v1/optimize/run` | Run UC/ED optimization |
 | `POST` | `/api/v1/optimize/run-with-solar` | UC/ED with auto solar forecast |
+| `GET`  | `/api/v1/optimize/results/{job_id}` | Retrieve a stored optimization result |
 | `GET`  | `/api/v1/optimize/status` | Solver config & availability |
 | `GET`  | `/api/v1/forecast/solar` | Solar generation forecast (pvlib) |
 | `GET`  | `/api/v1/forecast/load` | Statistical load forecast |
-| `GET`  | `/api/v1/ai/load` | AI/LLM load forecast |
+| `GET`  | `/api/v1/ai/load` | AI/LLM load forecast (synthetic input — see response `data_source`) |
+| `POST` | `/api/v1/ai/load/custom` | AI load forecast from caller-supplied historical data |
 | `GET`  | `/api/v1/pv/modules/search` | Search CEC PV module database |
 | `GET`  | `/api/v1/pv/modules/{name}` | PV module detail |
 | `GET`  | `/api/v1/weather/current` | Current weather data |
 | `GET`  | `/api/v1/location/current` | Backend default location config |
-| `POST` | `/api/v1/generators` | Manage generator fleet |
+| `GET`  | `/api/v1/generators/templates` | List built-in generator templates |
+| `GET`  | `/api/v1/generators/presets/indonesia` | Indonesia market presets |
+| `POST` | `/api/v1/generators/create` | Validate a custom generator definition |
 
 ---
 
@@ -173,7 +177,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```bash
 cd frontend
 npm install
-npm run dev        # Vite dev server on :5173
+npm run dev        # Vite dev server on :3000 (configured in vite.config.ts)
 ```
 
 ### Ollama (optional)

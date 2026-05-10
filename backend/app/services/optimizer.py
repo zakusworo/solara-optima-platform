@@ -17,6 +17,12 @@ from loguru import logger
 from app.core.config import settings
 from app.models.schemas import GeneratorData, OptimizationRequest, OptimizationResult
 
+# Relative MIP optimality gap passed to CBC. 1% means CBC stops once the
+# best integer solution is within 1% of the LP relaxation lower bound —
+# trades a tiny accuracy loss for much faster solve times. Override per
+# call via the time_limit / solver_name path if a tighter gap is needed.
+_DEFAULT_RELATIVE_OPTIMALITY_GAP = 0.01
+
 
 class UCEDOptimizer:
     """Mixed-Integer Linear Programming optimizer for UC/ED problems"""
@@ -420,7 +426,7 @@ class UCEDOptimizer:
             solver = pl.PULP_CBC_CMD(
                 msg=settings.DEBUG,
                 timeLimit=self.time_limit,
-                gapRel=0.01,  # 1% optimality gap
+                gapRel=_DEFAULT_RELATIVE_OPTIMALITY_GAP,
             )
         elif self.solver_name.lower() == "glpk":
             solver = pl.GLPK(msg=settings.DEBUG, timeLimit=self.time_limit)
