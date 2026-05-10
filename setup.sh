@@ -6,7 +6,6 @@ set -e
 
 echo "=========================================="
 echo "Solara Optima Platform - Setup"
-echo "Politeknik Energi dan Pertambangan Bandung"
 echo "=========================================="
 echo ""
 

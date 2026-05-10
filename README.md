@@ -274,5 +274,4 @@ MIT License — see [LICENSE](./LICENSE)
 **Zulfikar Aji Kusworo**  
 GitHub: [@zakusworo](https://github.com/zakusworo)  
 Email: greataji13@gmail.com  
-Affiliation: Politeknik Energi dan Pertambangan Bandung, Indonesia  
 DOI: [10.5281/zenodo.19653510](https://doi.org/10.5281/zenodo.19653510)

@@ -216,7 +216,6 @@ Consider saving this project structure as a skill for future renewable energy pr
 ## Author
 
 **Zulfikar Aji Kusworo**  
-Politeknik Energi dan Pertambangan Bandung  
 Email: greataji13@gmail.com  
 GitHub: zakusworo  
 DOI: 10.5281/zenodo.19653510
