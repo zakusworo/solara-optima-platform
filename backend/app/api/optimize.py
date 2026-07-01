@@ -6,6 +6,7 @@ import uuid
 from collections import OrderedDict
 from datetime import datetime, timedelta
 from threading import Lock
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, HTTPException
 from loguru import logger
@@ -147,9 +148,21 @@ async def run_optimization_with_solar(request: OptimizationRequest):
             # Determine forecast horizon from load profile
             horizon_hours = len(request.load_profile) * settings.TIME_RESOLUTION
 
+            # Anchor the forecast to local midnight so hour index i lines up
+            # with the load profile's hour-of-day convention (load[i] = hour i).
+            # Defaulting start to "now" would cyclically shift solar relative to
+            # load — solar landing at night and zero at midday.
+            tz = ZoneInfo(settings.TIMEZONE)
+            start = datetime.now(tz).replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
+            end = start + timedelta(hours=horizon_hours)
+
             forecast = solar_service.generate_forecast(
                 capacity=request.pv_system_capacity,
-                horizon_hours=horizon_hours,
+                start=start,
+                end=end,
+                weather_source="clearsky",
             )
 
             request.solar_forecast = forecast["generation"]
