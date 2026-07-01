@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { Outlet, Link, useLocation } from 'react-router-dom'
 import {
   Zap,
@@ -182,7 +182,15 @@ export default function Layout() {
       {/* Main content */}
       <main className="lg:ml-64 min-h-screen">
         <div className="p-6 lg:p-8">
-          <Outlet />
+          <Suspense
+            fallback={
+              <div className="flex items-center justify-center py-20 text-[#8A7A60]">
+                <Loader2 size={20} className="animate-spin mr-2" /> Loading…
+              </div>
+            }
+          >
+            <Outlet />
+          </Suspense>
         </div>
       </main>
 

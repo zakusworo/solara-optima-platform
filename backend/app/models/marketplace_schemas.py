@@ -7,10 +7,14 @@ platform sizes a system, computes bankable savings/ROI, quantifies CO2 avoided,
 and matches the project to installers and financing products.
 """
 
+import re
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+# Pragmatic email check (avoids adding the email-validator dependency).
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
 class CustomerSegment(str, Enum):
@@ -159,3 +163,19 @@ class QuoteRequest(BaseModel):
     installer_id: Optional[str] = None
     financier_id: Optional[str] = None
     notes: Optional[str] = None
+
+    @field_validator("name")
+    @classmethod
+    def _normalize_name(cls, v: str) -> str:
+        v = (v or "").strip()
+        if not v:
+            raise ValueError("name is required")
+        return v
+
+    @field_validator("email")
+    @classmethod
+    def _normalize_email(cls, v: str) -> str:
+        v = (v or "").strip().lower()
+        if not _EMAIL_RE.match(v):
+            raise ValueError("a valid email address is required")
+        return v

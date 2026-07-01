@@ -18,6 +18,7 @@ from loguru import logger
 
 from app.core.config import settings
 from app.models.schemas import SolarForecastResponse
+from app.services import weather_pvgis
 
 # Empirical year-round optimal-tilt formula for tropical latitudes:
 #     tilt_deg = |latitude| * SLOPE + INTERCEPT
@@ -171,6 +172,19 @@ class SolarForecastService:
             else:
                 logger.warning("TMY file not found, falling back to clear-sky")
                 return self.get_weather_data(start, end, source="clearsky")
+
+        elif source == "pvgis":
+            # Real satellite TMY (full representative year, cloud-adjusted).
+            # start/end are ignored — a TMY is a complete year, not a date range.
+            df = weather_pvgis.get_tmy(self.latitude, self.longitude)
+            if df is not None and not df.empty:
+                logger.info(
+                    f"Using PVGIS TMY ({len(df)} hours) for "
+                    f"({self.latitude}, {self.longitude})"
+                )
+                return df
+            logger.warning("PVGIS unavailable; falling back to clear-sky")
+            return self.get_weather_data(start, end, source="clearsky")
 
         else:
             logger.warning(f"Unknown weather source '{source}', using clear-sky")

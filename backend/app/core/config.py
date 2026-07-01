@@ -49,6 +49,20 @@ class Settings(BaseSettings):
     CARBON_PRICE_URL: Optional[str] = None
     RATES_TTL_HOURS: int = 6
 
+    # Real irradiance via PVGIS (JRC) — free, no API key. Used by the marketplace
+    # yield calc when a site latitude/longitude is supplied; falls back to the
+    # clear-sky model when offline/unavailable. TMY is disk-cached per location.
+    ENABLE_PVGIS: bool = True
+    PVGIS_BASE_URL: str = "https://re.jrc.ec.europa.eu/api/v5_2"
+    PVGIS_TTL_DAYS: int = 30  # TMY is stable; refetch monthly
+    PVGIS_TIMEOUT_S: int = 8
+
+    # Marketplace leads — stored as append-only JSONL pending a DB migration
+    # (see ROADMAP §7). LEADS_ADMIN_TOKEN gates the admin list/export endpoints;
+    # leave None to disable admin access entirely (endpoints return 503).
+    LEADS_ADMIN_TOKEN: Optional[str] = None
+    LEADS_RATE_LIMIT_PER_MIN: int = 5  # per-client quote-request cap
+
     # Database
     DATABASE_URL: str = "postgresql://user:***@localhost:5432/solara_optima"
     DATABASE_ECHO: bool = False

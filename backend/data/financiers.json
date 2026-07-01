@@ -1,5 +1,7 @@
 {
-  "_disclaimer": "Illustrative sample financing products for demo purposes only. Rates, tenors and tickets are placeholders; replace with real, signed lender/PPA-provider terms before go-live.",
+  "_disclaimer": "Illustrative sample financing products for demo purposes only. Rates, tenors and tickets are placeholders representative of common Indonesian market structures; replace with real, signed lender/PPA-provider terms before go-live. Each record is marked verified=false until a real contract is in place.",
+  "_source": "sample (representative market structure)",
+  "_as_of": "2026-07",
   "financiers": [
     {
       "id": "fin-green-term-loan",
@@ -12,7 +14,8 @@
       "min_ticket_idr": 50000000,
       "max_ticket_idr": 50000000000,
       "segments": ["commercial", "industrial"],
-      "description": "Asset-backed term loan for C&I rooftop, up to 90% LTV, 7-year tenor."
+      "description": "Asset-backed term loan for C&I rooftop, up to 90% LTV, 7-year tenor.",
+      "verified": false
     },
     {
       "id": "fin-kur-hijau",
@@ -25,7 +28,8 @@
       "min_ticket_idr": 10000000,
       "max_ticket_idr": 500000000,
       "segments": ["residential", "commercial"],
-      "description": "Subsidized micro-loan for MSMEs and households, low rate, no down payment."
+      "description": "Subsidized micro-loan for MSMEs and households, low rate, no down payment.",
+      "verified": false
     },
     {
       "id": "fin-solar-ppa",
@@ -38,7 +42,8 @@
       "min_ticket_idr": 500000000,
       "max_ticket_idr": 100000000000,
       "segments": ["commercial", "industrial"],
-      "description": "Developer funds, owns and operates the system; customer buys solar kWh 15% below PLN tariff. No upfront cost."
+      "description": "Developer funds, owns and operates the system; customer buys solar kWh 15% below PLN tariff. No upfront cost.",
+      "verified": false
     },
     {
       "id": "fin-lease-to-own",
@@ -51,7 +56,8 @@
       "min_ticket_idr": 25000000,
       "max_ticket_idr": 5000000000,
       "segments": ["residential", "commercial"],
-      "description": "Operating lease with ownership transfer at end of term; low down payment."
+      "description": "Operating lease with ownership transfer at end of term; low down payment.",
+      "verified": false
     },
     {
       "id": "fin-p2p-solar",
@@ -64,7 +70,8 @@
       "min_ticket_idr": 20000000,
       "max_ticket_idr": 2000000000,
       "segments": ["residential", "commercial"],
-      "description": "Crowd-funded loan, fast approval, no collateral for small tickets."
+      "description": "Crowd-funded loan, fast approval, no collateral for small tickets.",
+      "verified": false
     }
   ]
 }

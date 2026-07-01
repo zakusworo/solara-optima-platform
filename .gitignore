@@ -52,3 +52,6 @@ data/*.html
 
 # Runtime-generated marketplace leads
 backend/data/leads.jsonl
+
+# PVGIS TMY cache (fetched per location at runtime)
+backend/data/weather/pvgis_*.json

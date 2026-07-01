@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { TrendingUp, Sun, Zap, Battery } from 'lucide-react'
-import Plot from 'react-plotly.js'
+import LazyPlot from '../components/LazyPlot'
 import { api } from '../utils/api'
 
 export default function Dashboard() {
@@ -132,7 +132,7 @@ export default function Dashboard() {
         <div className="bg-white rounded-xl border border-[#C8BFA8] p-6">
           <h3 className="font-semibold mb-4">Monthly Solar Irradiance</h3>
           <div className="h-64">
-            <Plot
+            <LazyPlot
               data={[
                 {
                   x: solarResource.monthly_averages.map(m => `Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec`.split(' ')[m.month - 1]),

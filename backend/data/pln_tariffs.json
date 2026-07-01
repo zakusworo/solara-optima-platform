@@ -1,5 +1,7 @@
 {
-  "_note": "Representative PLN non-subsidized tariff groups (Rp/kWh). Illustrative values based on 2024-2025 tariff adjustment brackets; edit to match the latest PLN tariff decree before production use.",
+  "_note": "Representative PLN non-subsidized (TLD/TKED) tariff groups in Rp/kWh, reflecting the publicly published 2024 tariff-adjustment brackets by customer class and voltage. These are realistic but not guaranteed current — confirm against the latest Kepmen ESDM / PLN tariff decree before production use.",
+  "_source": "PLN non-subsidized tariff structure (TLD/TKED), representative 2024 brackets by class/voltage",
+  "_as_of": "2024-2025",
   "currency": "IDR",
   "tariffs": [
     { "code": "R-1/TR-900-RTM", "name": "Household 900 VA (RTM, non-subsidy)", "segment": "residential", "price_idr_per_kwh": 1352.0 },

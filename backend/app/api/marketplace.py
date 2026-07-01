@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 from typing import Dict, List, Optional
 from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Header, HTTPException, Query, Request, Response
 from loguru import logger
 
 from app.core.config import settings
@@ -29,6 +29,7 @@ from app.models.marketplace_schemas import (
 )
 from app.models.schemas import APIResponse
 from app.services import finance
+from app.services.leads_store import leads_store, quote_rate_limiter
 
 router = APIRouter()
 
@@ -36,24 +37,40 @@ _DATA_DIR = settings.BASE_DIR / "data"
 _TARIFFS_FILE = _DATA_DIR / "pln_tariffs.json"
 _INSTALLERS_FILE = _DATA_DIR / "installers.json"
 _FINANCIERS_FILE = _DATA_DIR / "financiers.json"
-_LEADS_FILE = _DATA_DIR / "leads.jsonl"
 
 
-def _load_json(path, key: str) -> List[Dict]:
+def _load_json(path, key: str) -> tuple:
+    """Load a marketplace data file -> (items, provenance).
+
+    Provenance is read from the file's top-level _source/_as_of/_disclaimer
+    (or _note) and the per-item ``verified`` flags, so API consumers can tell
+    real, vetted data from illustrative samples.
+    """
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError:
         logger.error(f"Marketplace data file missing: {path}")
-        return []
+        return [], {"verified": False, "source": None, "as_of": None, "note": "file missing"}
     except json.JSONDecodeError as e:
         logger.error(f"Marketplace data file is not valid JSON ({path}): {e}")
-        return []
-    return raw.get(key, [])
+        return [], {"verified": False, "source": None, "as_of": None, "note": "invalid JSON"}
+    items = raw.get(key, [])
+    provenance = {
+        "verified": bool(items) and all(it.get("verified", False) for it in items),
+        "source": raw.get("_source"),
+        "as_of": raw.get("_as_of"),
+        "note": raw.get("_disclaimer") or raw.get("_note"),
+    }
+    return items, provenance
 
 
-_tariffs: List[Dict] = _load_json(_TARIFFS_FILE, "tariffs")
-_installers: List[Dict] = _load_json(_INSTALLERS_FILE, "installers")
-_financiers: List[Dict] = _load_json(_FINANCIERS_FILE, "financiers")
+def _prov_tag(prov: Dict) -> str:
+    return "verified" if prov.get("verified") else "sample data (not yet verified)"
+
+
+_tariffs, _tariffs_prov = _load_json(_TARIFFS_FILE, "tariffs")
+_installers, _installers_prov = _load_json(_INSTALLERS_FILE, "installers")
+_financiers, _financiers_prov = _load_json(_FINANCIERS_FILE, "financiers")
 
 
 def _find_tariff(code: str) -> Optional[Dict]:
@@ -66,7 +83,7 @@ async def get_tariffs():
     return APIResponse(
         success=True,
         data=_tariffs,
-        message=f"{len(_tariffs)} PLN tariff groups",
+        message=f"{len(_tariffs)} PLN tariff groups · {_prov_tag(_tariffs_prov)}",
     )
 
 
@@ -146,7 +163,11 @@ async def get_installers(
             segment=segment or "commercial",
             region=region,
         )
-    return APIResponse(success=True, data=data, message=f"{len(data)} installers")
+    return APIResponse(
+        success=True,
+        data=data,
+        message=f"{len(data)} installers · {_prov_tag(_installers_prov)}",
+    )
 
 
 @router.get("/financiers", response_model=APIResponse)
@@ -158,7 +179,11 @@ async def get_financiers(
     data = _financiers
     if segment is not None or capex_idr is not None:
         data = _filter_financiers(segment=segment or "commercial", capex_idr=capex_idr)
-    return APIResponse(success=True, data=data, message=f"{len(data)} financiers")
+    return APIResponse(
+        success=True,
+        data=data,
+        message=f"{len(data)} financiers · {_prov_tag(_financiers_prov)}",
+    )
 
 
 @router.post("/match", response_model=APIResponse)
@@ -175,30 +200,86 @@ async def match(request: MatchRequest):
     return APIResponse(
         success=True,
         data={"installers": installers, "financiers": financiers},
-        message=f"{len(installers)} installers, {len(financiers)} financiers matched",
+        message=(
+            f"{len(installers)} installers, {len(financiers)} financiers matched · "
+            "sample partner data (replace with contracted partners before go-live)"
+        ),
     )
 
 
 @router.post("/quote-request", response_model=APIResponse)
-async def quote_request(request: QuoteRequest):
-    """Submit a customer lead (persisted to data/leads.jsonl)."""
+async def quote_request(request: QuoteRequest, req: Request):
+    """Submit a customer lead (persisted to data/leads.jsonl).
+
+    Rate-limited per client IP to discourage spam; storage is a hardened
+    append-only JSONL store (see services/leads_store.py) pending the DB move.
+    """
+    client_ip = req.client.host if req.client else "anonymous"
+    if not quote_rate_limiter.allow(client_ip):
+        raise HTTPException(
+            status_code=429,
+            detail="Too many quote requests from your address — please try again in a minute.",
+        )
+
     lead = request.model_dump()
     lead["lead_id"] = f"lead-{uuid4().hex[:10]}"
     lead["created_at"] = datetime.now(timezone.utc).isoformat()
+    lead["client_ip"] = client_ip
     if request.segment:
         lead["segment"] = request.segment.value
     if request.preferred_financing:
         lead["preferred_financing"] = request.preferred_financing.value
-    try:
-        with _LEADS_FILE.open("a", encoding="utf-8") as fh:
-            fh.write(json.dumps(lead) + "\n")
-    except OSError as e:  # pragma: no cover - non-fatal
-        logger.error(f"Could not persist lead: {e}")
-    logger.info(f"New quote request: {lead['lead_id']} ({request.email})")
+    leads_store.append(lead)
+    logger.info(f"New quote request: {lead['lead_id']} ({request.email}) from {client_ip}")
     return APIResponse(
         success=True,
         data={"lead_id": lead["lead_id"]},
         message="Quote request received. A partner will be in touch.",
+    )
+
+
+def _require_admin(token: Optional[str]) -> None:
+    """Gate admin endpoints on a shared secret. 503 if unconfigured, 403 if wrong."""
+    expected = settings.LEADS_ADMIN_TOKEN
+    if not expected:
+        raise HTTPException(
+            status_code=503,
+            detail="Leads admin disabled — set LEADS_ADMIN_TOKEN to enable.",
+        )
+    if not token or token != expected:
+        raise HTTPException(status_code=403, detail="Invalid admin token.")
+
+
+@router.get("/admin/leads", response_model=APIResponse)
+async def admin_list_leads(x_admin_token: Optional[str] = Header(None)):
+    """List all submitted leads (admin-only, X-Admin-Token gated)."""
+    _require_admin(x_admin_token)
+    leads = leads_store.all()
+    return APIResponse(
+        success=True,
+        data={"leads": leads, "count": len(leads)},
+        message=f"{len(leads)} leads stored",
+    )
+
+
+@router.get("/admin/leads/export")
+async def admin_export_leads(x_admin_token: Optional[str] = Header(None)):
+    """Export all leads as a JSON download (admin-only, X-Admin-Token gated)."""
+    _require_admin(x_admin_token)
+    leads = leads_store.all()
+    payload = json.dumps(
+        {
+            "exported_at": datetime.now(timezone.utc).isoformat(),
+            "count": len(leads),
+            "leads": leads,
+        },
+        ensure_ascii=False,
+        indent=2,
+    )
+    return Response(
+        content=payload,
+        media_type="application/json",
+        headers={"Content-Disposition": 'attachment; filename="solara-leads.json"'},
     )
 
 
@@ -208,26 +289,13 @@ async def portfolio():
     Aggregated pipeline stats across submitted leads — the 'aggregation' view
     that turns many small rooftops into one investable portfolio.
     """
-    total_leads = 0
-    total_capacity = 0.0
-    total_capex = 0.0
-    total_bill = 0.0
-    if _LEADS_FILE.exists():
-        for line in _LEADS_FILE.read_text(encoding="utf-8").splitlines():
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                lead = json.loads(line)
-            except json.JSONDecodeError:
-                continue
-            total_leads += 1
-            total_capacity += lead.get("capacity_kwp") or 0.0
-            total_bill += lead.get("monthly_bill_idr") or 0.0
+    stats = leads_store.stats()
+    total_leads = stats["total_leads"]
+    total_capacity = stats["total_capacity_kwp"]
+    total_bill = stats["aggregated_monthly_bill_idr"]
 
     # Approximate portfolio economics from aggregated capacity
-    if total_capacity > 0:
-        total_capex = total_capacity * finance.capex_per_kwp(total_capacity)
+    total_capex = total_capacity * finance.capex_per_kwp(total_capacity) if total_capacity > 0 else 0.0
     annual_gen = total_capacity * finance.DEFAULT_SPECIFIC_YIELD
     annual_co2_t = annual_gen * finance.GRID_EMISSION_FACTOR_KG_PER_KWH / 1000.0
 

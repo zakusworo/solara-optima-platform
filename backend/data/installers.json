@@ -1,5 +1,7 @@
 {
-  "_disclaimer": "Illustrative sample data for demo purposes only. Names are fictitious; replace with vetted, contracted EPC/installer partners and real capabilities before go-live.",
+  "_disclaimer": "Illustrative sample data for demo purposes only. Names are fictitious; replace with vetted, contracted EPC/installer partners and real capabilities before go-live. Each record is marked verified=false until a real partner is contracted and the entry is updated.",
+  "_source": "sample (fictitious)",
+  "_as_of": "2026-07",
   "installers": [
     {
       "id": "ins-surya-nusantara",
@@ -13,7 +15,8 @@
       "offering": "Turnkey rooftop EPC, O&M, PLN permitting (SLO/PJBL)",
       "warranty_years": 25,
       "lead_time_weeks": 6,
-      "contact": "partnerships@example.com"
+      "contact": "partnerships@example.com",
+      "verified": false
     },
     {
       "id": "ins-mentari-solar",
@@ -27,7 +30,8 @@
       "offering": "Residential & SME rooftop, monitoring app, financing referral",
       "warranty_years": 25,
       "lead_time_weeks": 4,
-      "contact": "sales@example.com"
+      "contact": "sales@example.com",
+      "verified": false
     },
     {
       "id": "ins-khatulistiwa-pv",
@@ -41,7 +45,8 @@
       "offering": "C&I rooftop EPC, ground-mount, PPA structuring support",
       "warranty_years": 25,
       "lead_time_weeks": 8,
-      "contact": "ci@example.com"
+      "contact": "ci@example.com",
+      "verified": false
     },
     {
       "id": "ins-archipelago-solar",
@@ -55,7 +60,8 @@
       "offering": "Island & resort rooftop + storage, off-grid hybrid",
       "warranty_years": 20,
       "lead_time_weeks": 7,
-      "contact": "hello@example.com"
+      "contact": "hello@example.com",
+      "verified": false
     },
     {
       "id": "ins-garuda-renewables",
@@ -69,7 +75,8 @@
       "offering": "Utility-scale & large C&I rooftop, EPC + long-term O&M",
       "warranty_years": 25,
       "lead_time_weeks": 12,
-      "contact": "projects@example.com"
+      "contact": "projects@example.com",
+      "verified": false
     },
     {
       "id": "ins-tropikal-energy",
@@ -83,7 +90,8 @@
       "offering": "SME rooftop specialist, fast install, bill-savings guarantee",
       "warranty_years": 25,
       "lead_time_weeks": 3,
-      "contact": "cs@example.com"
+      "contact": "cs@example.com",
+      "verified": false
     }
   ]
 }

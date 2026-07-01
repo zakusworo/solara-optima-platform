@@ -1,11 +1,16 @@
+import { lazy } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
-import Dashboard from './pages/Dashboard'
-import Marketplace from './pages/Marketplace'
-import Optimization from './pages/Optimization'
-import SolarForecast from './pages/SolarForecast'
-import Generators from './pages/Generators'
-import Settings from './pages/Settings'
+
+// Route-level code splitting: each page is its own chunk, fetched on
+// navigation. The Suspense boundary lives in Layout (around <Outlet/>), so
+// the sidebar stays mounted while a page chunk loads.
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Marketplace = lazy(() => import('./pages/Marketplace'))
+const Optimization = lazy(() => import('./pages/Optimization'))
+const SolarForecast = lazy(() => import('./pages/SolarForecast'))
+const Generators = lazy(() => import('./pages/Generators'))
+const Settings = lazy(() => import('./pages/Settings'))
 
 function App() {
   return (

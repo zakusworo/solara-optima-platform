@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Play, RefreshCw, Zap, Sun, Battery, Edit3 } from 'lucide-react'
-import Plot from 'react-plotly.js'
+import LazyPlot from '../components/LazyPlot'
 import { api } from '../utils/api'
 
 export default function Optimization() {
@@ -131,7 +131,7 @@ export default function Optimization() {
           {/* Chart */}
           {hasSample ? (
             <div className="h-48">
-              <Plot
+              <LazyPlot
                 data={[
                   {
                     x: Array.from({ length: 24 }, (_, i) => i),
@@ -273,7 +273,7 @@ export default function Optimization() {
             <h3 className="font-semibold mb-4">Generation Stack</h3>
             <div className="h-64">
               {result.generator_schedules && result.solar_output && (
-                <Plot
+                <LazyPlot
                   data={[
                     {
                       x: Array.from({ length: 24 }, (_, i) => i),

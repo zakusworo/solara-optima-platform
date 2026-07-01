@@ -5,7 +5,7 @@ is spec'd in detail.
 
 ---
 
-## 1. ⭐ Live market parameters at startup (USD/IDR + carbon price)  — REQUESTED
+## 1. ✅ Live market parameters at startup (USD/IDR + carbon price)  — DONE
 
 **Goal:** on every backend start (and on demand), fetch the **real-time USD/IDR rate**
 and **carbon price**, so the *Market Parameters* on the **Settings** page and all
@@ -47,35 +47,48 @@ estimate current without manual edits.
 
 ---
 
-## 2. Real weather / irradiance (accuracy)
-Replace clear-sky-only modeling with real data — PVGIS TMY, NASA POWER, or BMKG — so
-specific yield reflects actual cloud cover per site. Cache TMY per location.
+## 2. ✅ Real weather / irradiance (marketplace yield) — DONE
+Replaced clear-sky-only modeling for the **marketplace yield** with real **PVGIS ERA5
+TMY** irradiance (`services/weather_pvgis.py`), disk-cached per location with a TTL and
+a clear-sky fallback when offline. Specific yield is now cloud-adjusted per site.
+**Still open:** the `/forecast` endpoint still defaults to clear-sky — wire PVGIS into
+that path too (slice the TMY to the requested date window).
 
-## 3. Location → yield wiring in the Marketplace
-The Marketplace estimate currently uses the backend default location for specific yield.
-Pass the selected city's lat/lon from the form so yield reflects the chosen city, not just
-the Settings default.
+## 3. ✅ Location → yield wiring in the Marketplace — DONE
+The Marketplace now sends the selected province's lat/lon (`PROVINCE_COORDS` in
+`Marketplace.tsx`); the backend threads it into the PVGIS yield calc, so yield reflects
+the chosen site, not just the Settings default.
 
-## 4. Replace illustrative data with real, vetted data
+## 4. ⚠️ Replace illustrative data with real, vetted data — MITIGATED
 `data/installers.json`, `data/financiers.json`, and `data/pln_tariffs.json` are samples.
-Swap in real, contracted partners and the latest PLN tariff decree before go-live.
+Provenance (`_source`/`_as_of`/per-item `verified`) now marks them as such, surfaced in
+the API responses and via a "sample data" badge in the Marketplace UI; tariffs are
+realistic PLN non-subsidized brackets. **Still required before go-live:** swap in real,
+contracted partners and confirm the latest PLN tariff decree.
 
 ## 5. Resilience & UX
 - Add a React **error boundary** (the Dashboard crash we fixed would have shown a friendly
   message instead of a white screen).
 - Add a **"backend offline"** banner when `/health` is unreachable.
 
-## 6. Frontend performance
-The bundle is ~5.2 MB (Plotly dominates). Code-split routes and lazy-load Plotly
-(`React.lazy` + `manualChunks`) to cut initial load.
+## 6. ✅ Frontend performance — DONE
+Routes are `React.lazy`-loaded, Plotly is lazy-loaded via `<LazyPlot>`, and
+`manualChunks` isolates the plotly bundle. Initial bundle ≈ 446 KB (was ~5.2 MB);
+the ~4.7 MB plotly chunk loads only when a chart renders.
 
-## 7. Leads → database + admin
-Move leads from `data/leads.jsonl` to a real DB (Postgres via the existing SQLAlchemy dep),
-add auth, and build a simple admin/portfolio dashboard.
+## 7. ⚠️ Leads → database + admin — MITIGATED
+Leads still persist to `data/leads.jsonl`, but the store is now hardened
+(`services/leads_store.py`: thread-safe atomic append + tolerant read/stats), with
+per-IP rate limiting, email/name validation, and token-gated admin list/export
+endpoints (`GET /admin/leads`, `/admin/leads/export`, `LEADS_ADMIN_TOKEN`). **Still
+required:** move to Postgres (existing SQLAlchemy dep) + real auth + an admin UI.
 
 ## 8. Carbon-credit module (CIIC upside)
 Add a dMRV / I-REC hook: from aggregated portfolio generation, estimate issuable credits
 and indicative revenue — directly targeting the CIIC carbon-credit award.
 
-## 9. Tests & CI
-Add pytest coverage for the marketplace endpoints and a frontend smoke test in CI.
+## 9. Tests & CI — PARTIAL
+Added `backend/test_marketplace_api.py` — TestClient coverage of the marketplace
+endpoints (provenance, PVGIS-with-coords, leads store, admin gating, rate limit,
+email/name validation). **Still required:** a frontend smoke test in CI, and deciding
+whether to port these script-style tests to pytest.

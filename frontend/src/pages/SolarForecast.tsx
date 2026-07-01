@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Sun, Download, Search, ChevronDown, ChevronUp, Check } from 'lucide-react'
-import Plot from 'react-plotly.js'
+import LazyPlot from '../components/LazyPlot'
 import { api } from '../utils/api'
 
 interface PVModule {
@@ -466,7 +466,7 @@ export default function SolarForecast() {
           <div className="bg-white rounded-xl border border-[#C8BFA8] p-6">
             <h3 className="font-semibold mb-4">Solar Generation Forecast</h3>
             <div className="h-72">
-              <Plot
+              <LazyPlot
                 data={[
                   {
                     x: forecast.timestamps.map((t: string) => new Date(t).getHours()),
@@ -506,7 +506,7 @@ export default function SolarForecast() {
           <div className="bg-white rounded-xl border border-[#C8BFA8] p-6">
             <h3 className="font-semibold mb-4">Temperature Profile</h3>
             <div className="h-48">
-              <Plot
+              <LazyPlot
                 data={[{
                   x: forecast.timestamps.map((t: string) => new Date(t).getHours()),
                   y: forecast.temperature.map((g: number) => Number(g) || 0),

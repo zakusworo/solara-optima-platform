@@ -11,7 +11,7 @@ import {
   CheckCircle2,
   Loader2,
 } from 'lucide-react'
-import Plot from 'react-plotly.js'
+import LazyPlot from '../components/LazyPlot'
 import { api } from '../utils/api'
 
 interface Tariff {
@@ -26,6 +26,24 @@ const PROVINCES = [
   'Jawa Timur', 'Bali', 'Nusa Tenggara Barat', 'Nusa Tenggara Timur',
   'Sumatera Utara', 'Riau', 'Sumatera Barat', 'Sulawesi Selatan',
 ]
+
+// Provincial-capital coordinates so the estimate uses real PVGIS irradiance for
+// the chosen site. '' (Any / nationwide) falls back to Bandung (default site).
+const PROVINCE_COORDS: Record<string, { lat: number; lon: number }> = {
+  'DKI Jakarta': { lat: -6.2088, lon: 106.8456 },
+  'Jawa Barat': { lat: -6.9147, lon: 107.6098 },
+  'Banten': { lat: -6.0, lon: 106.1 },
+  'Jawa Tengah': { lat: -6.9667, lon: 110.4167 },
+  'DI Yogyakarta': { lat: -7.7956, lon: 110.3695 },
+  'Jawa Timur': { lat: -7.2575, lon: 112.7528 },
+  'Bali': { lat: -8.6705, lon: 115.2126 },
+  'Nusa Tenggara Barat': { lat: -8.5833, lon: 116.1167 },
+  'Nusa Tenggara Timur': { lat: -10.1833, lon: 123.5833 },
+  'Sumatera Utara': { lat: 3.5952, lon: 98.6722 },
+  'Riau': { lat: 0.5167, lon: 101.45 },
+  'Sumatera Barat': { lat: -0.9471, lon: 100.3533 },
+  'Sulawesi Selatan': { lat: -5.1477, lon: 119.4327 },
+}
 
 const fmtIDR = (v: number) =>
   new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Math.round(v || 0))
@@ -74,6 +92,11 @@ export default function Marketplace() {
       if (inputMode === 'bill') payload.monthly_bill_idr = monthlyBill
       else payload.desired_capacity_kwp = capacity
       if (roofArea !== '') payload.roof_area_m2 = roofArea
+      // Send the selected province's coordinates so the backend sizes yield from
+      // real PVGIS irradiance at that site (clear-sky fallback if offline).
+      const coords = PROVINCE_COORDS[region] ?? { lat: -6.9147, lon: 107.6098 }
+      payload.latitude = coords.lat
+      payload.longitude = coords.lon
 
       const res = await api.post('/api/v1/marketplace/estimate', payload)
       const data = res.data.data
@@ -320,7 +343,7 @@ export default function Marketplace() {
           <div className="bg-white rounded-xl border border-[#C8BFA8] p-6">
             <h3 className="font-semibold mb-4">Cumulative cashflow — cash purchase (Rp juta)</h3>
             <div className="h-72">
-              <Plot
+              <LazyPlot
                 data={[
                   {
                     x: result.cashflow_years,
@@ -346,6 +369,12 @@ export default function Marketplace() {
           </div>
 
           {/* Matches */}
+          {match && (
+            <div className="text-xs text-[#8A7A60] bg-[#EDE8DC] border border-[#C8BFA8] rounded-lg px-3 py-2">
+              Partner &amp; financing listings are <strong>sample data</strong> for
+              demonstration — not yet verified, contracted partners. Replace before go-live.
+            </div>
+          )}
           {match && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="bg-white rounded-xl border border-[#C8BFA8] p-5">
@@ -448,7 +477,8 @@ export default function Marketplace() {
 
           <p className="text-xs text-[#8A7A60]">
             Estimates are illustrative and not a financial guarantee. Assumptions:
-            specific yield {result.assumptions.specific_yield_kwh_per_kwp} kWh/kWp/yr,
+            specific yield {result.assumptions.specific_yield_kwh_per_kwp} kWh/kWp/yr
+            {' '}({result.assumptions.weather_source ?? 'modelled'}),
             grid factor {result.assumptions.grid_emission_factor_kg_per_kwh} kgCO₂/kWh,
             discount rate {(result.assumptions.discount_rate * 100).toFixed(0)}%.
           </p>

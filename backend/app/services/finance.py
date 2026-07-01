@@ -122,8 +122,40 @@ def capex_per_kwp(capacity_kwp: float) -> float:
 # --------------------------------------------------------------------------- #
 def estimate_specific_yield(
     latitude: Optional[float] = None, longitude: Optional[float] = None
-) -> float:
-    """Annual kWh per kWp, derived from a pvlib clear-day run and weather-derated."""
+) -> tuple:
+    """Annual kWh per kWp and the irradiance source used.
+
+    Returns (yield_kwh_per_kwp, source_str). When an explicit site lat/lon is
+    supplied and PVGIS is available, the yield comes from a full-year run over a
+    real satellite TMY (cloud-adjusted, no derate needed). Otherwise it falls
+    back to a clear-sky equinox day x 365 with a weather derate. The source
+    string is surfaced to the user so the estimate's basis is transparent.
+    """
+    # Real-irradiance path: only when a specific site location was provided.
+    if latitude is not None and longitude is not None and settings.ENABLE_PVGIS:
+        try:
+            service = SolarForecastService(latitude=latitude, longitude=longitude)
+            # start/end are ignored on the PVGIS branch (full TMY year) but are
+            # used if PVGIS is unavailable and get_weather_data drops to clear-sky.
+            forecast = service.generate_forecast(
+                capacity=1.0,
+                weather_source="pvgis",
+                start=datetime(2024, 3, 21, 0, 0),
+                end=datetime(2024, 3, 21, 23, 0),
+            )
+            # PVGIS branch returns a full 8760-h TMY; a clear-sky fallback
+            # returns ~24 h for the equinox day — distinguish by row count.
+            if len(forecast["timestamps"]) > 100 and forecast["total_generation"] > 0:
+                return round(forecast["total_generation"], 1), "PVGIS satellite TMY (real irradiance)"
+            # PVGIS unavailable -> generate_forecast already fell back to a
+            # clear-sky equinox day; annualize it with the weather derate.
+            annual = forecast["total_generation"] * 365 * CLEARSKY_TO_REAL_DERATE
+            if annual > 0:
+                return round(annual, 1), "clear-sky model (PVGIS offline)"
+        except Exception as e:  # pragma: no cover - defensive fallback
+            logger.warning(f"PVGIS yield calc failed ({e}); using clear-sky")
+
+    # Fallback: clear-sky equinox day x 365, weather-derated.
     try:
         service = SolarForecastService(latitude=latitude, longitude=longitude)
         forecast = service.generate_forecast(
@@ -134,11 +166,11 @@ def estimate_specific_yield(
         daily_kwh_per_kwp = forecast["total_generation"]
         annual = daily_kwh_per_kwp * 365 * CLEARSKY_TO_REAL_DERATE
         if annual <= 0:
-            return DEFAULT_SPECIFIC_YIELD
-        return round(annual, 1)
+            return DEFAULT_SPECIFIC_YIELD, "default (clear-sky unavailable)"
+        return round(annual, 1), "clear-sky model (no site coordinates)"
     except Exception as e:  # pragma: no cover - defensive fallback
         logger.warning(f"Specific-yield calc failed ({e}); using default")
-        return DEFAULT_SPECIFIC_YIELD
+        return DEFAULT_SPECIFIC_YIELD, "default fallback"
 
 
 # --------------------------------------------------------------------------- #
@@ -163,8 +195,10 @@ def analyze(request: SolarEstimateRequest, tariff_idr_per_kwh: float) -> SolarEs
         monthly_kwh = None
     annual_consumption = monthly_kwh * 12 if monthly_kwh else None
 
-    # 2. Specific yield from pvlib
-    specific_yield = estimate_specific_yield(request.latitude, request.longitude)
+    # 2. Specific yield from pvlib (real PVGIS TMY when site coords are given)
+    specific_yield, weather_source = estimate_specific_yield(
+        request.latitude, request.longitude
+    )
 
     # 3. Capacity sizing (priority: explicit > consumption-driven > fallback)
     if request.desired_capacity_kwp:
@@ -255,6 +289,7 @@ def analyze(request: SolarEstimateRequest, tariff_idr_per_kwh: float) -> SolarEs
     assumptions = {
         "system_lifetime_years": SYSTEM_LIFETIME_YEARS,
         "specific_yield_kwh_per_kwp": specific_yield,
+        "weather_source": weather_source,
         "capex_per_kwp_idr": c_per_kwp,
         "self_consumption_ratio": self_cons,
         "target_offset": target_offset,

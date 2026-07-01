@@ -22,6 +22,7 @@ from app.api import (
 from app.core.config import settings
 from app.core.logging import setup_logging
 from app.services.market_rates import market_rates_service
+from app.services import weather_pvgis
 
 
 def create_application() -> FastAPI:
@@ -125,6 +126,12 @@ def create_application() -> FastAPI:
         if settings.ENABLE_LIVE_RATES:
             asyncio.create_task(asyncio.to_thread(market_rates_service.refresh))
             logger.info("Live market-rates refresh scheduled")
+
+        # Warm the PVGIS TMY cache for the default location so the first
+        # marketplace estimate is instant; safe no-op if offline/disabled.
+        if settings.ENABLE_PVGIS:
+            asyncio.create_task(asyncio.to_thread(weather_pvgis.warm_default_location))
+            logger.info("PVGIS default-location warm-up scheduled")
 
     @application.on_event("shutdown")
     async def shutdown_event():
