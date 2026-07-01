@@ -55,6 +55,7 @@ class PVModuleDB:
                         f"Loading cached PV module DB (age: {age_days:.1f} days)"
                     )
                     self.df = pd.read_json(DB_CACHE_FILE, orient="records")
+                    self.df = self._clean(self.df)
                     logger.info(f"Loaded {len(self.df)} PV modules from cache")
                     return
 
@@ -67,6 +68,7 @@ class PVModuleDB:
             )
             if DB_CACHE_FILE.exists():
                 self.df = pd.read_json(DB_CACHE_FILE, orient="records")
+                self.df = self._clean(self.df)
 
     def _download_and_cache(self):
         """Download CEC modules CSV and convert to structured JSON"""
@@ -183,13 +185,35 @@ class PVModuleDB:
             df["efficiency"] = df["p_stc"] / (df["area"] * 1000)
             df["efficiency"] = df["efficiency"].fillna(0.18).clip(0.05, 0.30)
 
-        self.df = df.reset_index(drop=True)
+        self.df = self._clean(df.reset_index(drop=True))
 
         # Cache to JSON
         self.df.to_json(DB_CACHE_FILE, orient="records")
         DB_TIMESTAMP_FILE.write_text(str(time.time()))
 
         logger.info(f"Cached {len(self.df)} PV modules to {DB_CACHE_FILE}")
+
+    @staticmethod
+    def _clean(df: pd.DataFrame) -> pd.DataFrame:
+        """Drop SAM template/units rows and any module missing core data.
+
+        The NREL SAM CEC Modules CSV carries a units/placeholder row whose
+        values serialise as name="[0]", manufacturer="lib_manufacturer",
+        technology="cec_material", p_stc=null. Real produced panels always
+        carry an STC power rating, so dropping null-p_stc rows removes that
+        template row and any incomplete entries — leaving only real modules.
+        """
+        if df is None or df.empty:
+            return df
+        if "name" in df.columns:
+            df = df[~df["name"].astype(str).str.startswith("[", na=False)]
+        if "manufacturer" in df.columns:
+            df = df[~df["manufacturer"].astype(str).str.lower().eq("lib_manufacturer")]
+        if "technology" in df.columns:
+            df = df[~df["technology"].astype(str).str.lower().eq("cec_material")]
+        if "p_stc" in df.columns:
+            df = df[df["p_stc"].notna()]
+        return df.reset_index(drop=True)
 
     def get_manufacturers(self) -> List[str]:
         """Return sorted list of unique manufacturers"""
@@ -219,10 +243,14 @@ class PVModuleDB:
         results = self.df.copy()
 
         if manufacturer:
-            results = results[results["manufacturer"] == manufacturer]
+            results = results[
+                results["manufacturer"].astype(str).str.lower() == manufacturer.lower()
+            ]
 
         if technology:
-            results = results[results["technology"] == technology]
+            results = results[
+                results["technology"].astype(str).str.lower() == technology.lower()
+            ]
 
         if pmin is not None and "p_stc" in results.columns:
             results = results[results["p_stc"] >= pmin]

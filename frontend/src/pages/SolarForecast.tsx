@@ -45,6 +45,8 @@ export default function SolarForecast() {
   const [moduleFilter, setModuleFilter] = useState({ manufacturer: '', technology: '', pmin: '', pmax: '' })
   const [showModuleSelect, setShowModuleSelect] = useState(false)
   const [modulesLoading, setModulesLoading] = useState(false)
+  const [manufacturers, setManufacturers] = useState<string[]>([])
+  const [technologies, setTechnologies] = useState<string[]>([])
   const [manualMode, setManualMode] = useState(false)
   const [manualModule, setManualModule] = useState<ManualModule>({
     p_stc: 550,
@@ -59,10 +61,24 @@ export default function SolarForecast() {
     area: 2.7,
   })
 
-  // Fetch modules on mount
+  // Fetch modules + real manufacturer/technology filter options on mount
   useEffect(() => {
     fetchModules()
+    fetchFilterOptions()
   }, [])
+
+  const fetchFilterOptions = async () => {
+    try {
+      const [manRes, techRes] = await Promise.all([
+        api.get('/api/v1/pv/modules/manufacturers'),
+        api.get('/api/v1/pv/modules/technologies'),
+      ])
+      setManufacturers(manRes.data.manufacturers || [])
+      setTechnologies(techRes.data.technologies || [])
+    } catch (error) {
+      console.error('Failed to load module filter options:', error)
+    }
+  }
 
   const fetchModules = async (params?: Record<string, any>) => {
     setModulesLoading(true)
@@ -294,26 +310,22 @@ export default function SolarForecast() {
               <select
                 value={moduleFilter.manufacturer}
                 onChange={(e) => { setModuleFilter({ ...moduleFilter, manufacturer: e.target.value }); }}
-                className="px-2 py-1 border rounded text-sm"
+                className="px-2 py-1 border rounded text-sm max-w-[240px]"
               >
-                <option value="">All Manufacturers</option>
-                <option value="Longi">Longi</option>
-                <option value="Jinko">Jinko</option>
-                <option value="Trina">Trina</option>
-                <option value="Canadian Solar">Canadian Solar</option>
-                <option value="First Solar">First Solar</option>
-                <option value="SunPower">SunPower</option>
+                <option value="">All Manufacturers ({manufacturers.length})</option>
+                {manufacturers.map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
               </select>
               <select
                 value={moduleFilter.technology}
                 onChange={(e) => { setModuleFilter({ ...moduleFilter, technology: e.target.value }); }}
                 className="px-2 py-1 border rounded text-sm"
               >
-                <option value="">All Tech</option>
-                <option value="Mono-c-Si">Mono Si</option>
-                <option value="Multi-c-Si">Multi Si</option>
-                <option value="CdTe">CdTe</option>
-                <option value="Thin Film">Thin Film</option>
+                <option value="">All Tech ({technologies.length})</option>
+                {technologies.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
               </select>
               <input
                 type="number"
