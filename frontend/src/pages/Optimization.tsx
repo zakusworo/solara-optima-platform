@@ -1,7 +1,15 @@
 import { useState } from 'react'
-import { Play, RefreshCw, Zap, Sun, Battery, Edit3 } from 'lucide-react'
+import { Play, RefreshCw, Zap, Sun, Battery, Edit3, Layers } from 'lucide-react'
 import LazyPlot from '../components/LazyPlot'
 import { api } from '../utils/api'
+import { useFleet, fleetToApiGenerators } from '../store/fleet'
+
+// Distinct bar colors cycled across fleet generators so the dispatch stack
+// stays legible regardless of fleet size.
+const GEN_COLORS = [
+  '#5A7A30', '#A07010', '#3A7A18', '#B04030',
+  '#6A5A8A', '#3A8A8A', '#C8842A', '#2C5A8A',
+]
 
 export default function Optimization() {
   // Initialize with 24 zeros so inputs are always present
@@ -27,10 +35,16 @@ export default function Optimization() {
     setLoadProfile(updated)
   }
 
+  const { generators, system } = useFleet()
+
   const runOptimization = async () => {
     const hasData = loadProfile.some(v => v > 0)
     if (!hasData) {
       alert('Please load a sample or enter load data')
+      return
+    }
+    if (generators.length === 0) {
+      alert('No generators in fleet. Add generators on the Generators page first.')
       return
     }
 
@@ -38,47 +52,11 @@ export default function Optimization() {
     try {
       const response = await api.post('/api/v1/optimize/run-with-solar', {
         load_profile: loadProfile,
-        generators: [
-          {
-            generator_id: 1,
-            name: 'Gas Turbine 1',
-            fuel_type: 'Natural Gas',
-            min_output: 10,
-            max_output: 150,
-            ramp_up: 60,
-            ramp_down: 60,
-            min_uptime: 2,
-            min_downtime: 2,
-            initial_status: 1,
-            initial_output: 50,
-            startup_cost: 500000,
-            shutdown_cost: 0,
-            no_load_cost: 50000,
-            fuel_cost: 800,
-            emissions_rate: 0.45,
-          },
-          {
-            generator_id: 2,
-            name: 'Diesel Generator',
-            fuel_type: 'Diesel',
-            min_output: 5,
-            max_output: 100,
-            ramp_up: 40,
-            ramp_down: 40,
-            min_uptime: 1,
-            min_downtime: 1,
-            initial_status: 0,
-            initial_output: 0,
-            startup_cost: 100000,
-            shutdown_cost: 0,
-            no_load_cost: 25000,
-            fuel_cost: 1200,
-            emissions_rate: 0.7,
-          },
-        ],
-        pv_system_capacity: 100,
-        bess_capacity: 50,
-        bess_power_rating: 25,
+        generators: fleetToApiGenerators(generators),
+        // Omit pv_system_capacity when 0 so the backend skips solar generation.
+        pv_system_capacity: system.solarCapacityKw || undefined,
+        bess_capacity: system.batteryCapacityKwh,
+        bess_power_rating: system.batteryPowerKw,
       })
 
       setResult(response.data.data.result)
@@ -210,7 +188,10 @@ export default function Optimization() {
             <Sun size={20} className="text-[#3A7A18]" />
             <div>
               <p className="font-medium text-sm">Solar PV System</p>
-              <p className="text-xs text-[#8A7A60]">100 kW capacity, North-facing (0° azimuth)</p>
+              <p className="text-xs text-[#8A7A60]">
+                {system.solarCapacityKw} kW capacity
+                {system.solarCapacityKw > 0 ? ' (auto clear-sky forecast)' : ' (disabled)'}
+              </p>
             </div>
           </div>
 
@@ -218,15 +199,32 @@ export default function Optimization() {
             <Battery size={20} className="text-[#5A7A30]" />
             <div>
               <p className="font-medium text-sm">Battery Storage</p>
-              <p className="text-xs text-[#8A7A60]">50 kWh / 25 kW, 90% efficiency</p>
+              <p className="text-xs text-[#8A7A60]">
+                {system.batteryCapacityKwh} kWh / {system.batteryPowerKw} kW, 90% efficiency
+              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 p-3 bg-[#F5F0E8] rounded-lg">
-            <Zap size={20} className="text-[#A07010]" />
-            <div>
-              <p className="font-medium text-sm">Generator Fleet</p>
-              <p className="text-xs text-[#8A7A60]">1× Gas Turbine (100kW), 1× Diesel (50kW)</p>
+          <div className="flex items-start gap-3 p-3 bg-[#F5F0E8] rounded-lg">
+            <Layers size={20} className="text-[#A07010] mt-0.5" />
+            <div className="flex-1">
+              <p className="font-medium text-sm">Generator Fleet ({generators.length})</p>
+              {generators.length === 0 ? (
+                <p className="text-xs text-[#B04030]">
+                  No generators — configure on the Generators page.
+                </p>
+              ) : (
+                <ul className="text-xs text-[#8A7A60] mt-1 space-y-0.5">
+                  {generators.map((g) => (
+                    <li key={g.uid} className="flex justify-between">
+                      <span>
+                        {g.name} <span className="opacity-70">({g.fuel_type})</span>
+                      </span>
+                      <span className="font-mono">{g.min_output}–{g.max_output} kW</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
 
@@ -272,32 +270,34 @@ export default function Optimization() {
           <div className="bg-white rounded-xl border border-[#C8BFA8] p-6">
             <h3 className="font-semibold mb-4">Generation Stack</h3>
             <div className="h-64">
-              {result.generator_schedules && result.solar_output && (
+              {result.generator_schedules && (
                 <LazyPlot
                   data={[
+                    // One bar series per fleet generator, matched by generator_id.
+                    ...generators.map((g, i) => {
+                      const sched =
+                        result.generator_schedules.find(
+                          (s: any) => s.generator_id === i + 1,
+                        ) || result.generator_schedules[i]
+                      return {
+                        x: Array.from({ length: 24 }, (_, h) => h),
+                        y: sched?.output || [],
+                        type: 'bar',
+                        name: g.name,
+                        marker: { color: GEN_COLORS[i % GEN_COLORS.length] },
+                      }
+                    }),
+                    ...(result.solar_output
+                      ? [{
+                          x: Array.from({ length: 24 }, (_, h) => h),
+                          y: result.solar_output,
+                          type: 'bar',
+                          name: 'Solar',
+                          marker: { color: '#3A7A18' },
+                        }]
+                      : []),
                     {
-                      x: Array.from({ length: 24 }, (_, i) => i),
-                      y: result.generator_schedules[0]?.output || [],
-                      type: 'bar',
-                      name: 'Gas Turbine',
-                      marker: { color: '#5A7A30' },
-                    },
-                    {
-                      x: Array.from({ length: 24 }, (_, i) => i),
-                      y: result.generator_schedules[1]?.output || [],
-                      type: 'bar',
-                      name: 'Diesel',
-                      marker: { color: '#A07010' },
-                    },
-                    {
-                      x: Array.from({ length: 24 }, (_, i) => i),
-                      y: result.solar_output,
-                      type: 'bar',
-                      name: 'Solar',
-                      marker: { color: '#3A7A18' },
-                    },
-                    {
-                      x: Array.from({ length: 24 }, (_, i) => i),
+                      x: Array.from({ length: 24 }, (_, h) => h),
                       y: loadProfile,
                       type: 'scatter',
                       name: 'Load',
