@@ -74,8 +74,8 @@ removing the two biggest adoption barriers: upfront cost and payback uncertainty
 
 **Impact (GHG):** Each 100 kWp rooftop avoids ~120–140 tCO₂/yr (grid factor 0.85
 kgCO₂/kWh). The platform's leverage is aggregation: a pipeline of 1,000 such rooftops →
-~130,000 tCO₂/yr avoided. Basis for future carbon-credit issuance (I-REC / avoided
-grid emissions).
+~130,000 tCO₂/yr avoided. The platform now quantifies this upside per-quote and at the
+portfolio level — see §5 (I-REC carbon-credit module).
 
 **Commercial applications / GTM:** (a) SME & commercial rooftops (C&I) as the beachhead —
 strong daytime self-consumption → best payback; residential and industrial next.
@@ -100,7 +100,34 @@ verifiable tCO₂ avoided and a repeatable installer+financier conversion funnel
 
 ---
 
-## 5. Try it
+## 5. Carbon credits (I-REC) — CIIC carbon-credit award
+
+Beyond displacing grid power, each financed rooftop system is a source of **issuable
+renewable-energy certificates**. The platform now quantifies that upside:
+
+- **I-RECs issuable** — 1 International Renewable Energy Certificate per MWh of solar
+  generation, scaled by an eligibility/registration factor (default 0.95).
+- **Avoided grid CO₂** — generation × Indonesia grid emission factor (0.85 kgCO₂/kWh).
+- **Indicative credit revenue** — I-RECs × unit price (configurable `IREC_PRICE_USD`,
+  default USD 1.50/cert), shown in IDR + USD.
+
+Surfaces:
+- Per-quote **"Carbon credits & I-REC potential"** panel in the Marketplace result.
+- Aggregated block in `GET /api/v1/marketplace/portfolio` (the aggregation → carbon story).
+- Standalone `GET /api/v1/marketplace/carbon/credits?annual_generation_kwh=...`.
+
+```
+curl 'localhost:8000/api/v1/marketplace/carbon/credits?annual_generation_kwh=10000'
+# -> irecs_issuable: 9.5, avoided_co2_tonnes: 8.5, indicative_revenue_usd: 14.25
+```
+
+These are *indicative* figures for the pitch. I-REC and avoided-CO₂ credits are distinct
+instruments; a project monetises one or the other to avoid double-counting. **Still
+needed for go-live:** a live I-REC unit-price feed and a real dMRV/registry integration.
+
+---
+
+## 6. Try it
 
 ```bash
 # Backend

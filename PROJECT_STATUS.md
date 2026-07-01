@@ -17,7 +17,9 @@ top of a pvlib solar engine + UC/ED dispatch optimizer.
 | Solar forecasting (pvlib) | ✅ Working | Clear-sky **and** real PVGIS TMY; per-location |
 | **Solar Marketplace** | ✅ Working | Sizing + financing + CO₂ + matching + leads |
 | **Live market rates** | ✅ Working | USD/IDR live at startup; carbon = config fallback |
-| **Real irradiance (PVGIS)** | ✅ Working | ERA5 TMY per site; clear-sky fallback; disk-cached |
+| **Real irradiance (PVGIS)** | ✅ Working | ERA5 TMY for yield + /forecast; clear-sky fallback |
+| **Carbon credits (I-REC)** | ✅ Working | Per-quote + portfolio I-REC / avoided-CO₂ / revenue |
+| **Error boundary + offline banner** | ✅ Working | Friendly crash fallback; `/api/v1/health` banner |
 | **Frontend bundle split** | ✅ Working | ~446 KB initial (was 5.2 MB); Plotly on-demand |
 | Frontend (React/Vite) | ✅ Builds & runs | Route-level lazy + `manualChunks` |
 | Dashboard white-screen bug | ✅ Fixed | Was a pre-existing crash (see §4) |
@@ -108,6 +110,22 @@ docs/
 
 ---
 
+## 4c. Carbon-credit + safety cycle (2026-07-01)
+
+1. **Carbon-credit module** — `services/carbon_credits.py` estimates I-RECs (1 cert/MWh
+   × eligibility), avoided tCO₂, and indicative credit revenue (IDR + USD). Surfaced
+   per-quote in the estimate result + a UI panel, aggregated in `/portfolio`, and via
+   `GET /carbon/credits`. Targets the CIIC carbon-credit award.
+2. **Real irradiance in /forecast** — new `pvgis_window` weather source slices the PVGIS
+   TMY to the requested window (local-time aligned); the Solar Forecast page defaults to
+   real irradiance with a Real/Clear-sky toggle.
+3. **Error boundary** — `components/ErrorBoundary.tsx` wraps the routed pages so a crash
+   shows a friendly fallback (sidebar stays mounted) instead of a white screen.
+4. **Backend-offline banner** — Layout polls the proxied `/api/v1/health` and shows a red
+   banner when the backend is unreachable.
+
+---
+
 ## 5. Verified
 
 - `backend/test_api.py` — optimizer + solar forecast pass.
@@ -118,6 +136,9 @@ docs/
   disk-cache hit on repeat; clear-sky fallback confirmed when offline.
 - Headless Chrome — Dashboard renders (no errors), Marketplace estimate→financing→match→quote flow works.
 - Live `GET /api/v1/market/rates` returns a live USD/IDR with timestamp.
+- `backend/test_marketplace_api.py` now also asserts the carbon_credits block (estimate +
+  portfolio), `/carbon/credits` math (9.5 I-RECs / 8.5 tCO₂ for 10 MWh), `/api/v1/health`,
+  and the `/forecast/solar` `weather_source` param (clearsky + pvgis_window).
 - `npm run build` — passes; initial bundle ≈ 446 KB, Plotly in an on-demand chunk.
 
 ---
@@ -131,7 +152,7 @@ docs/
 | 3 | Province → yield not wired | ✅ **Addressed** — the frontend sends the selected province's lat/lon; the backend threads it into the PVGIS yield calc, so estimates are site-specific. |
 | 4 | 5.2 MB frontend bundle (Plotly) | ✅ **Addressed** — routes are `React.lazy`-loaded, Plotly is lazy-loaded via `<LazyPlot>`, and `manualChunks` isolates it. Initial bundle ≈ 446 KB (was 5,235 KB); Plotly loads only when a chart renders. |
 | 5 | Leads to `leads.jsonl`, no DB/auth | ⚠️ **Mitigated** — hardened thread-safe atomic store, per-IP rate limiting, email/name validation, and token-gated admin list/export endpoints (`LEADS_ADMIN_TOKEN`). Full DB + auth still pending (ROADMAP §7). |
-| 6 | Carbon price has no live IDR feed | ⚠️ Unchanged — falls back to config (Rp 50,000/tCO₂); architecture ready for IDXCarbon when a source exists. |
+| 6 | Carbon price / credit monetisation | ⚠️ **Partially addressed** — an I-REC carbon-credit estimate (issuable certs, avoided tCO₂, indicative revenue) is now surfaced per-quote and in the portfolio; the I-REC unit price is a configurable default (USD). **Still pending:** a live I-REC/IDXCarbon price feed and a real dMRV/registry integration. |
 
 ---
 

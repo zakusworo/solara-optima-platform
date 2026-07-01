@@ -26,6 +26,10 @@ async def get_solar_forecast(
     altitude: Optional[float] = Query(None, description="Override altitude (m)"),
     tilt: Optional[float] = Query(None, description="Panel tilt angle"),
     azimuth: Optional[float] = Query(None, description="Panel azimuth (0°=North)"),
+    weather_source: str = Query(
+        "pvgis_window",
+        description="Weather source: 'pvgis_window' (real satellite TMY, default) or 'clearsky'.",
+    ),
 ):
     """
     Generate solar PV generation forecast
@@ -52,6 +56,7 @@ async def get_solar_forecast(
             capacity=capacity,
             horizon_hours=hours,
             location=location,
+            weather_source=weather_source,
         )
 
         # Apply custom tilt/azimuth if provided
@@ -63,6 +68,7 @@ async def get_solar_forecast(
             forecast_data = service.generate_forecast(
                 capacity=capacity,
                 horizon_hours=hours,
+                weather_source=weather_source,
                 tilt=tilt,
                 azimuth=azimuth or settings.OPTIMAL_AZIMUTH,
             )

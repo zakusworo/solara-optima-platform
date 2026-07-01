@@ -36,6 +36,7 @@ export default function SolarForecast() {
   const [hours, setHours] = useState(24)
   const [forecast, setForecast] = useState<any>(null)
   const [loading, setLoading] = useState(false)
+  const [weatherSource, setWeatherSource] = useState<'pvgis_window' | 'clearsky'>('pvgis_window')
 
   // PV Module selection state
   const [modules, setModules] = useState<PVModule[]>([])
@@ -113,6 +114,7 @@ export default function SolarForecast() {
         params: {
           capacity: moduleCapacity,
           hours,
+          weather_source: weatherSource,
         },
       })
       const data = response.data.data
@@ -203,6 +205,23 @@ export default function SolarForecast() {
             Azimuth: 0° (North-facing)<br />
             Location: Bandung
           </p>
+          <div className="mt-3">
+            <p className="text-xs text-[#8A7A60] mb-1">Irradiance source</p>
+            <div className="flex gap-1">
+              <button
+                onClick={() => setWeatherSource('pvgis_window')}
+                className={`px-2.5 py-1 rounded-md text-xs ${weatherSource === 'pvgis_window' ? 'bg-[#3A7010] text-white' : 'bg-gray-100 text-gray-700'}`}
+              >
+                Real (PVGIS)
+              </button>
+              <button
+                onClick={() => setWeatherSource('clearsky')}
+                className={`px-2.5 py-1 rounded-md text-xs ${weatherSource === 'clearsky' ? 'bg-[#3A7010] text-white' : 'bg-gray-100 text-gray-700'}`}
+              >
+                Clear-sky
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -464,7 +483,12 @@ export default function SolarForecast() {
 
           {/* Generation Chart */}
           <div className="bg-white rounded-xl border border-[#C8BFA8] p-6">
-            <h3 className="font-semibold mb-4">Solar Generation Forecast</h3>
+            <h3 className="font-semibold mb-1">Solar Generation Forecast</h3>
+            <p className="text-xs text-[#8A7A60] mb-4">
+              {weatherSource === 'pvgis_window'
+                ? 'Real irradiance — PVGIS satellite TMY (cloud-adjusted, representative profile)'
+                : 'Clear-sky model — ideal maximum output, no cloud effects'}
+            </p>
             <div className="h-72">
               <LazyPlot
                 data={[

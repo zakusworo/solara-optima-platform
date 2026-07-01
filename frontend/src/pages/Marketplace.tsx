@@ -368,6 +368,41 @@ export default function Marketplace() {
             </div>
           </div>
 
+          {/* Carbon credits & I-REC potential (CIIC carbon-credit framing) */}
+          {result.carbon_credits && (
+            <div className="bg-white rounded-xl border border-[#C8BFA8] p-5">
+              <h3 className="font-semibold text-lg mb-1 flex items-center gap-2">
+                <Leaf size={18} /> Carbon credits &amp; I-REC potential
+              </h3>
+              <p className="text-xs text-[#8A7A60] mb-3">
+                Indicative monetisation of this system's renewable generation via
+                International Renewable Energy Certificates (1 I-REC = 1 MWh).
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div className="bg-[#F5F0E8] rounded-lg p-3">
+                  <p className="text-xs text-[#8A7A60]">Annual generation</p>
+                  <p className="font-semibold">{result.carbon_credits.annual_generation_mwh} MWh</p>
+                </div>
+                <div className="bg-[#F5F0E8] rounded-lg p-3">
+                  <p className="text-xs text-[#8A7A60]">I-RECs issuable</p>
+                  <p className="font-semibold">{result.carbon_credits.irecs_issuable}</p>
+                </div>
+                <div className="bg-[#F5F0E8] rounded-lg p-3">
+                  <p className="text-xs text-[#8A7A60]">Avoided CO₂</p>
+                  <p className="font-semibold">{result.carbon_credits.avoided_co2_tonnes} t/yr</p>
+                </div>
+                <div className="bg-[#F5F0E8] rounded-lg p-3">
+                  <p className="text-xs text-[#8A7A60]">Indicative credit revenue</p>
+                  <p className="font-semibold">~{fmtShort(result.carbon_credits.indicative_revenue_idr)}</p>
+                  <p className="text-xs text-[#8A7A60]">
+                    ≈ US${result.carbon_credits.indicative_revenue_usd} @ ${result.carbon_credits.irec_price_usd}/I-REC
+                  </p>
+                </div>
+              </div>
+              <p className="text-xs text-[#8A7A60] mt-3">{result.carbon_credits.note}</p>
+            </div>
+          )}
+
           {/* Matches */}
           {match && (
             <div className="text-xs text-[#8A7A60] bg-[#EDE8DC] border border-[#C8BFA8] rounded-lg px-3 py-2">

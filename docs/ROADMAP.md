@@ -47,12 +47,12 @@ estimate current without manual edits.
 
 ---
 
-## 2. ✅ Real weather / irradiance (marketplace yield) — DONE
-Replaced clear-sky-only modeling for the **marketplace yield** with real **PVGIS ERA5
-TMY** irradiance (`services/weather_pvgis.py`), disk-cached per location with a TTL and
-a clear-sky fallback when offline. Specific yield is now cloud-adjusted per site.
-**Still open:** the `/forecast` endpoint still defaults to clear-sky — wire PVGIS into
-that path too (slice the TMY to the requested date window).
+## 2. ✅ Real weather / irradiance — DONE
+Replaced clear-sky-only modeling with real **PVGIS ERA5 TMY** irradiance
+(`services/weather_pvgis.py`), disk-cached per location with a TTL and a clear-sky
+fallback when offline. Used by both the marketplace yield (full-year run) and the
+`/forecast/solar` endpoint (TMY sliced to the requested window via the `pvgis_window`
+source), with a Real/Clear-sky toggle in the Solar Forecast UI.
 
 ## 3. ✅ Location → yield wiring in the Marketplace — DONE
 The Marketplace now sends the selected province's lat/lon (`PROVINCE_COORDS` in
@@ -66,10 +66,12 @@ the API responses and via a "sample data" badge in the Marketplace UI; tariffs a
 realistic PLN non-subsidized brackets. **Still required before go-live:** swap in real,
 contracted partners and confirm the latest PLN tariff decree.
 
-## 5. Resilience & UX
-- Add a React **error boundary** (the Dashboard crash we fixed would have shown a friendly
-  message instead of a white screen).
-- Add a **"backend offline"** banner when `/health` is unreachable.
+## 5. ✅ Resilience & UX — DONE
+- React **error boundary** (`components/ErrorBoundary.tsx`) wraps the routed pages; a
+  page crash now shows a friendly fallback with a "Try again" button instead of a white
+  screen, and the sidebar stays mounted.
+- **"Backend offline"** banner in Layout — polls the proxied `/api/v1/health` every 30s
+  and shows a red banner when the backend is unreachable.
 
 ## 6. ✅ Frontend performance — DONE
 Routes are `React.lazy`-loaded, Plotly is lazy-loaded via `<LazyPlot>`, and
@@ -83,12 +85,15 @@ per-IP rate limiting, email/name validation, and token-gated admin list/export
 endpoints (`GET /admin/leads`, `/admin/leads/export`, `LEADS_ADMIN_TOKEN`). **Still
 required:** move to Postgres (existing SQLAlchemy dep) + real auth + an admin UI.
 
-## 8. Carbon-credit module (CIIC upside)
-Add a dMRV / I-REC hook: from aggregated portfolio generation, estimate issuable credits
-and indicative revenue — directly targeting the CIIC carbon-credit award.
+## 8. ✅ Carbon-credit module (CIIC upside) — DONE
+`services/carbon_credits.py` estimates issuable I-RECs (1 cert/MWh × an eligibility
+factor), avoided tCO₂ (Indonesia grid factor), and indicative credit revenue (IDR + USD)
+from solar generation. Surfaced per-quote in the estimate result + a UI panel, aggregated
+in `/portfolio`, and via a standalone `GET /carbon/credits` endpoint. Config: `IREC_PRICE_USD`.
+**Still open:** a real dMRV/registry integration and a live I-REC price feed.
 
 ## 9. Tests & CI — PARTIAL
-Added `backend/test_marketplace_api.py` — TestClient coverage of the marketplace
-endpoints (provenance, PVGIS-with-coords, leads store, admin gating, rate limit,
-email/name validation). **Still required:** a frontend smoke test in CI, and deciding
-whether to port these script-style tests to pytest.
+`backend/test_marketplace_api.py` now also covers the carbon-credit block (estimate +
+portfolio + `/carbon/credits` math), the `/api/v1/health` endpoint, and the
+`/forecast/solar` `weather_source` param (clearsky + pvgis_window). **Still required:** a
+frontend smoke test in CI, and deciding whether to port these script-style tests to pytest.

@@ -29,6 +29,7 @@ from app.models.marketplace_schemas import (
 )
 from app.models.schemas import APIResponse
 from app.services import finance
+from app.services import carbon_credits as cc
 from app.services.leads_store import leads_store, quote_rate_limiter
 
 router = APIRouter()
@@ -298,6 +299,9 @@ async def portfolio():
     total_capex = total_capacity * finance.capex_per_kwp(total_capacity) if total_capacity > 0 else 0.0
     annual_gen = total_capacity * finance.DEFAULT_SPECIFIC_YIELD
     annual_co2_t = annual_gen * finance.GRID_EMISSION_FACTOR_KG_PER_KWH / 1000.0
+    carbon_block = cc.estimate(
+        annual_gen, emission_factor_kg_per_kwh=finance.GRID_EMISSION_FACTOR_KG_PER_KWH
+    )
 
     return APIResponse(
         success=True,
@@ -308,6 +312,21 @@ async def portfolio():
             "aggregated_monthly_bill_idr": round(total_bill),
             "portfolio_annual_generation_kwh": round(annual_gen),
             "portfolio_annual_co2_avoided_tonnes": round(annual_co2_t, 1),
+            "carbon_credits": carbon_block,
         },
         message="Portfolio aggregation",
     )
+
+
+@router.get("/carbon/credits", response_model=APIResponse)
+async def carbon_credits_estimate(annual_generation_kwh: float = Query(..., ge=0)):
+    """Indicative I-REC + avoided-CO2 + credit revenue for a given annual generation.
+
+    Powers the carbon-credit framing for the CIIC pitch: a rooftop portfolio's
+    annual MWh -> issuable I-RECs, avoided tCO2, and indicative credit revenue.
+    """
+    block = cc.estimate(
+        annual_generation_kwh,
+        emission_factor_kg_per_kwh=finance.GRID_EMISSION_FACTOR_KG_PER_KWH,
+    )
+    return APIResponse(success=True, data=block, message="Indicative carbon-credit estimate")

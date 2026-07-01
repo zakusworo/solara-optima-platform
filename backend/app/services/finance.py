@@ -23,6 +23,7 @@ from app.models.marketplace_schemas import (
     SolarEstimateResult,
 )
 from app.services.solar_forecast import SolarForecastService
+from app.services import carbon_credits as cc
 
 # --- Techno-economic assumptions (Indonesia, illustrative; override via request) ---
 SYSTEM_LIFETIME_YEARS = 25
@@ -267,6 +268,12 @@ def analyze(request: SolarEstimateRequest, tariff_idr_per_kwh: float) -> SolarEs
     lifetime_co2_t = lifetime_gen * GRID_EMISSION_FACTOR_KG_PER_KWH / 1000.0
     trees = int(annual_co2_t * 1000 / CO2_PER_TREE_KG_PER_YEAR)
 
+    # 7b. Carbon-credit / I-REC potential (indicative)
+    cc_block = cc.estimate(
+        annual_generation,
+        emission_factor_kg_per_kwh=GRID_EMISSION_FACTOR_KG_PER_KWH,
+    )
+
     # 8. Financing menu
     financing_options = _build_financing_options(
         request=request,
@@ -327,6 +334,7 @@ def analyze(request: SolarEstimateRequest, tariff_idr_per_kwh: float) -> SolarEs
         annual_co2_avoided_tonnes=round(annual_co2_t, 1),
         lifetime_co2_avoided_tonnes=round(lifetime_co2_t, 1),
         trees_equivalent_per_year=trees,
+        carbon_credits=cc_block,
         financing_options=financing_options,
         cashflow_years=list(range(0, SYSTEM_LIFETIME_YEARS + 1)),
         cumulative_cashflow_cash_idr=[round(c) for c in cum],

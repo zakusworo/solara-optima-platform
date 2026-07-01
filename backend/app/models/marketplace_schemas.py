@@ -130,6 +130,9 @@ class SolarEstimateResult(BaseModel):
     lifetime_co2_avoided_tonnes: float
     trees_equivalent_per_year: int
 
+    # Carbon-credit / I-REC potential (indicative; see services/carbon_credits.py)
+    carbon_credits: Dict[str, Any] = {}
+
     # Financing menu + cashflow curve (cash purchase)
     financing_options: List[FinancingOption]
     cashflow_years: List[int]

@@ -123,6 +123,46 @@ r = client.get("/api/v1/marketplace/portfolio")
 check(r.status_code == 200, "GET /portfolio -> 200")
 check(r.json()["data"]["total_leads"] >= 1, "portfolio aggregates stored leads")
 
+# --- Carbon-credit / I-REC block on the estimate ---
+cc = data.get("carbon_credits", {})
+check(bool(cc), "estimate result carries a carbon_credits block")
+check(cc.get("irecs_issuable", 0) > 0, f"estimate I-RECs issuable > 0 ({cc.get('irecs_issuable')})")
+check(cc.get("avoided_co2_tonnes", 0) > 0, "estimate avoided CO2 > 0 (carbon block)")
+check(cc.get("indicative_revenue_idr", 0) > 0, "estimate indicative revenue > 0")
+
+# --- Portfolio carbon_credits block (aggregation story) ---
+check("carbon_credits" in r.json()["data"], "portfolio carries a carbon_credits block")
+
+# --- Standalone /carbon/credits endpoint (10 MWh -> 9.5 I-RECs, 8.5 tCO2) ---
+r2 = client.get("/api/v1/marketplace/carbon/credits", params={"annual_generation_kwh": 10000})
+check(r2.status_code == 200, f"GET /carbon/credits -> 200 (got {r2.status_code})")
+ccd = r2.json()["data"]
+check(abs(ccd["irecs_issuable"] - 9.5) < 0.05, f"carbon/credits I-RECs == 9.5 (got {ccd['irecs_issuable']})")
+check(abs(ccd["avoided_co2_tonnes"] - 8.5) < 0.05, f"carbon/credits avoided CO2 == 8.5 (got {ccd['avoided_co2_tonnes']})")
+check(abs(ccd["indicative_revenue_usd"] - 14.25) < 0.05, f"carbon/credits revenue_usd == 14.25 (got {ccd['indicative_revenue_usd']})")
+
+# --- /api/v1/health (proxied health for the offline banner) ---
+r3 = client.get("/api/v1/health")
+check(r3.status_code == 200, f"GET /api/v1/health -> 200 (got {r3.status_code})")
+check(r3.json()["status"] == "ok", "/api/v1/health status == ok")
+
+# --- /forecast/solar accepts weather_source; returns the requested horizon ---
+rf = client.get(
+    "/api/v1/forecast/solar",
+    params={"capacity": 10, "hours": 24, "weather_source": "clearsky"},
+)
+check(rf.status_code == 200, f"GET /forecast/solar clearsky -> 200 (got {rf.status_code})")
+check(len(rf.json()["data"]["generation"]) >= 24, "forecast clearsky returns >=24 points")
+rfp = client.get(
+    "/api/v1/forecast/solar",
+    params={"capacity": 10, "hours": 24, "weather_source": "pvgis_window"},
+)
+check(rfp.status_code == 200, f"GET /forecast/solar pvgis_window -> 200 (got {rfp.status_code})")
+check(
+    len(rfp.json()["data"]["generation"]) >= 24,
+    "forecast pvgis_window returns >=24 points (PVGIS or clear-sky fallback)",
+)
+
 # --- Rate limiting (burst -> at least one 429) ---
 statuses = []
 for i in range(8):

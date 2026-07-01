@@ -109,6 +109,20 @@ def create_application() -> FastAPI:
             },
         }
 
+    @application.get("/api/v1/health")
+    async def api_health_check():
+        """Lightweight health check under the /api/v1 prefix.
+
+        Lives under /api so the Vite dev proxy forwards it to the backend (the
+        root /health route is not proxied in dev). Used by the frontend's
+        backend-offline banner.
+        """
+        return {
+            "status": "ok",
+            "app": settings.APP_NAME,
+            "version": settings.APP_VERSION,
+        }
+
     @application.on_event("startup")
     async def startup_event():
         """Initialize on startup"""

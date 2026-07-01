@@ -63,6 +63,11 @@ class Settings(BaseSettings):
     LEADS_ADMIN_TOKEN: Optional[str] = None
     LEADS_RATE_LIMIT_PER_MIN: int = 5  # per-client quote-request cap
 
+    # Carbon credits (I-REC) — indicative monetisation of rooftop solar via
+    # International Renewable Energy Certificates (1 cert = 1 MWh). Surfaced in
+    # the marketplace estimate + portfolio for the CIIC carbon-credit framing.
+    IREC_PRICE_USD: float = 1.5  # USD per I-REC certificate (indicative, configurable)
+
     # Database
     DATABASE_URL: str = "postgresql://user:***@localhost:5432/solara_optima"
     DATABASE_ECHO: bool = False

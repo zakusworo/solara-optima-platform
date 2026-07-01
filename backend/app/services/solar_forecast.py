@@ -186,9 +186,50 @@ class SolarForecastService:
             logger.warning("PVGIS unavailable; falling back to clear-sky")
             return self.get_weather_data(start, end, source="clearsky")
 
+        elif source == "pvgis_window":
+            # Real satellite TMY sliced to the requested window (aligned by
+            # month/day/hour in local time) — a cloud-adjusted representative
+            # forecast for the chosen dates. Falls back to clear-sky if offline.
+            df = weather_pvgis.get_tmy(self.latitude, self.longitude)
+            if df is not None and not df.empty:
+                logger.info(
+                    f"Using PVGIS TMY window for ({self.latitude}, {self.longitude})"
+                )
+                return self._slice_tmy_to_window(df, start, end)
+            logger.warning("PVGIS unavailable; falling back to clear-sky")
+            return self.get_weather_data(start, end, source="clearsky")
+
         else:
             logger.warning(f"Unknown weather source '{source}', using clear-sky")
             return self.get_weather_data(start, end, source="clearsky")
+
+    def _slice_tmy_to_window(
+        self, tmy: pd.DataFrame, start: datetime, end: datetime
+    ) -> pd.DataFrame:
+        """Slice a full PVGIS TMY (UTC) to the requested local-time window.
+
+        A TMY is a representative year, so each requested hour is matched by
+        (month, day, hour) in the location timezone and re-labelled with the
+        requested timestamps. Feb 29 requests collapse to Feb 28; any absent
+        key (partial TMY) is filled from neighbours.
+        """
+        df = tmy.tz_convert(self.timezone).copy()
+
+        def _k(t):
+            m, d, h = t.month, t.day, t.hour
+            if (m, d) == (2, 29):
+                d = 28
+            return f"{m}-{d}-{h}"
+
+        df["_k"] = [_k(t) for t in df.index]
+        lookup = df.drop_duplicates("_k").set_index("_k")[
+            ["ghi", "dni", "dhi", "temp_air", "wind_speed"]
+        ]
+        times = pd.date_range(start=start, end=end, freq="h", tz=self.timezone)
+        out = lookup.reindex([_k(t) for t in times])
+        out = out.ffill().bfill()
+        out.index = times
+        return out
 
     def generate_forecast(
         self,
@@ -307,12 +348,14 @@ class SolarForecastService:
         self,
         capacity: float,
         horizon_hours: int = 24,
+        weather_source: str = "clearsky",
     ) -> SolarForecastResponse:
         """Generate forecast and return as Pydantic model"""
 
         forecast = self.generate_forecast(
             capacity=capacity,
             horizon_hours=horizon_hours,
+            weather_source=weather_source,
         )
 
         return SolarForecastResponse(
@@ -355,6 +398,7 @@ async def generate_solar_forecast(
     capacity: float,
     horizon_hours: int = 24,
     location: Optional[Dict] = None,
+    weather_source: str = "clearsky",
 ) -> SolarForecastResponse:
     """Generate solar forecast with optional location override"""
 
@@ -367,4 +411,6 @@ async def generate_solar_forecast(
     else:
         service = SolarForecastService()
 
-    return service.generate_forecast_response(capacity, horizon_hours)
+    return service.generate_forecast_response(
+        capacity, horizon_hours, weather_source=weather_source
+    )

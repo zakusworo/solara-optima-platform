@@ -13,6 +13,7 @@ import {
   Loader2
 } from 'lucide-react'
 import { apiUrl } from '../utils/api'
+import ErrorBoundary from './ErrorBoundary'
 
 interface GeoLocation {
   city: string
@@ -25,9 +26,34 @@ export default function Layout() {
   const location = useLocation()
   const [userLocation, setUserLocation] = useState<GeoLocation | null>(null)
   const [locLoading, setLocLoading] = useState(true)
+  const [backendOnline, setBackendOnline] = useState(true)
 
   useEffect(() => {
     detectLocation()
+  }, [])
+
+  // Backend-offline banner: poll the (proxied) /api/v1/health endpoint. In dev the
+  // Vite proxy forwards /api to the backend; the root /health route is not proxied.
+  useEffect(() => {
+    let alive = true
+    const check = async () => {
+      const ctrl = new AbortController()
+      const t = setTimeout(() => ctrl.abort(), 5000)
+      try {
+        const r = await fetch(apiUrl('/api/v1/health'), { signal: ctrl.signal })
+        if (alive) setBackendOnline(r.ok)
+      } catch {
+        if (alive) setBackendOnline(false)
+      } finally {
+        clearTimeout(t)
+      }
+    }
+    check()
+    const id = setInterval(check, 30000)
+    return () => {
+      alive = false
+      clearInterval(id)
+    }
   }, [])
 
   async function detectLocation() {
@@ -181,16 +207,23 @@ export default function Layout() {
 
       {/* Main content */}
       <main className="lg:ml-64 min-h-screen">
+        {!backendOnline && (
+          <div className="bg-[#B04030] text-white text-sm px-4 py-2 text-center">
+            Backend offline — live data is unavailable. Cached/last-known values shown.
+          </div>
+        )}
         <div className="p-6 lg:p-8">
-          <Suspense
-            fallback={
-              <div className="flex items-center justify-center py-20 text-[#8A7A60]">
-                <Loader2 size={20} className="animate-spin mr-2" /> Loading…
-              </div>
-            }
-          >
-            <Outlet />
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense
+              fallback={
+                <div className="flex items-center justify-center py-20 text-[#8A7A60]">
+                  <Loader2 size={20} className="animate-spin mr-2" /> Loading…
+                </div>
+              }
+            >
+              <Outlet />
+            </Suspense>
+          </ErrorBoundary>
         </div>
       </main>
 
