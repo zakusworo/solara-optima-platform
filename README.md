@@ -8,9 +8,42 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19653510.svg)](https://doi.org/10.5281/zenodo.19653510)
 
-A modern platform for **Unit Commitment & Economic Dispatch (UC/ED)** optimization with deep integration of **solar PV forecasting**, **battery storage scheduling**, and **multi-agent AI forecasting**. Built specifically for Indonesian energy markets with real-time pvlib physics-based generation modeling and Ollama-powered LLM agents.
+A platform for accelerating **rooftop solar adoption in Indonesia**. On top of a
+physics-based **solar PV** engine (pvlib) and a **UC/ED dispatch optimizer**, Solara
+Optima adds a **Solar Aggregation & Financing Marketplace**: it turns a customer's PLN
+bill into a right-sized system, a **bankable savings/ROI proposition**, a quantified
+**CO₂-reduction** figure, and matches the project to **installers and financing**
+(cash / green loan / zero-CapEx PPA).
 
 **Repository**: https://github.com/zakusworo/solara-optima-platform
+
+---
+
+## Solar Aggregation & Financing Marketplace
+
+> **CIIC 2026 track: Energy Transition** — promoting renewable-energy adoption and
+> efficient resource use, with measurable GHG reduction.
+
+The barrier to rooftop solar in Indonesia is rarely the panels — it's **upfront cost and
+uncertainty about payback**. This layer removes both:
+
+- **Bill → system**: enter a monthly PLN bill (or target kWp), get a right-sized system
+  using pvlib-derived specific yield and self-consumption-aware savings (PLN export
+  credit removed per Permen ESDM 2/2024 is modeled).
+- **Bankable economics**: CAPEX, payback, IRR, NPV, LCOE and a **bankability score**,
+  plus a side-by-side **cash / loan / PPA** comparison with 25-year cashflows.
+- **Climate impact**: annual & lifetime **tCO₂ avoided** (grid emission factor) — the
+  metric CIIC scores and the basis for carbon-credit potential.
+- **Marketplace**: matches the sized project to **installer** and **financier** partners
+  and captures **leads**; a **portfolio** view aggregates many rooftops into one
+  investable pipeline.
+
+Open the **Solar Marketplace** page in the app, or see [`docs/MARKETPLACE.md`](docs/MARKETPLACE.md)
+for the full field-by-field CIIC mapping. Marketplace API lives under
+`/api/v1/marketplace/*`.
+
+**Docs:** [`docs/DEMO.md`](docs/DEMO.md) — step-by-step demo script, demo cities, and
+ready-made scenarios · [`docs/ROADMAP.md`](docs/ROADMAP.md) — planned improvements.
 
 ---
 
@@ -154,6 +187,13 @@ A modern platform for **Unit Commitment & Economic Dispatch (UC/ED)** optimizati
 | `GET`  | `/api/v1/generators/templates` | List built-in generator templates |
 | `GET`  | `/api/v1/generators/presets/indonesia` | Indonesia market presets |
 | `POST` | `/api/v1/generators/create` | Validate a custom generator definition |
+| `GET`  | `/api/v1/marketplace/tariffs` | PLN tariff groups for bill→kWh conversion |
+| `POST` | `/api/v1/marketplace/estimate` | Size a system + full financing/CO₂ analysis |
+| `GET`  | `/api/v1/marketplace/installers` | Browse/filter installer partners |
+| `GET`  | `/api/v1/marketplace/financiers` | Browse/filter financing products |
+| `POST` | `/api/v1/marketplace/match` | Match a sized project to installers + financiers |
+| `POST` | `/api/v1/marketplace/quote-request` | Submit a customer lead |
+| `GET`  | `/api/v1/marketplace/portfolio` | Aggregated pipeline stats (capacity, CO₂) |
 
 ---
 

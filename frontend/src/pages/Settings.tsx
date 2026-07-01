@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Settings as SettingsIcon, Save, Globe, Cpu, Zap, MapPin, Search } from 'lucide-react'
+import { Settings as SettingsIcon, Save, Globe, Cpu, Zap, MapPin, Search, RefreshCw } from 'lucide-react'
 import LocationMap from '../components/LocationMap'
 import { api } from '../utils/api'
 
@@ -7,6 +7,16 @@ interface GeoResult {
   name: string
   latitude: number
   longitude: number
+}
+
+// Human-friendly "x ago" from an ISO timestamp
+function timeAgo(iso?: string | null): string {
+  if (!iso) return 'just now'
+  const secs = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000))
+  if (secs < 60) return `${secs}s ago`
+  if (secs < 3600) return `${Math.floor(secs / 60)}m ago`
+  if (secs < 86400) return `${Math.floor(secs / 3600)}h ago`
+  return `${Math.floor(secs / 86400)}d ago`
 }
 
 export default function Settings() {
@@ -31,6 +41,32 @@ export default function Settings() {
   const [searchResults, setSearchResults] = useState<GeoResult[]>([])
   const [searching, setSearching] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [ratesMeta, setRatesMeta] = useState<any>(null)
+  const [refreshingRates, setRefreshingRates] = useState(false)
+
+  const applyRates = (d: any) => {
+    setSettings(s => ({ ...s, usdIdrRate: d.usd_idr, carbonPrice: d.carbon_price }))
+    setRatesMeta(d)
+  }
+
+  // Load live market rates (USD/IDR + carbon price) on mount
+  useEffect(() => {
+    api.get('/api/v1/market/rates')
+      .then(r => { if (r.data.success) applyRates(r.data.data) })
+      .catch((e: any) => console.error('Load rates failed:', e))
+  }, [])
+
+  const refreshRates = async () => {
+    setRefreshingRates(true)
+    try {
+      const r = await api.post('/api/v1/market/rates/refresh')
+      if (r.data.success) applyRates(r.data.data)
+    } catch (e: any) {
+      console.error('Rate refresh failed:', e)
+    } finally {
+      setRefreshingRates(false)
+    }
+  }
 
   useEffect(() => {
     api.get('/api/v1/location/current')
@@ -247,9 +283,33 @@ export default function Settings() {
 
       {/* Market Settings */}
       <div className="bg-white rounded-xl border border-[#C8BFA8] p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <Zap size={20} className="text-[#A07010]" />
-          <h2 className="font-semibold">Market Parameters</h2>
+        <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
+          <div className="flex items-center gap-3">
+            <Zap size={20} className="text-[#A07010]" />
+            <h2 className="font-semibold">Market Parameters</h2>
+            {ratesMeta && (
+              <span
+                className={`text-xs px-2 py-0.5 rounded-full ${
+                  ratesMeta.is_live?.usd_idr
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-amber-100 text-amber-800'
+                }`}
+                title={`USD/IDR source: ${ratesMeta.sources?.usd_idr}`}
+              >
+                {ratesMeta.is_live?.usd_idr
+                  ? `● Live · updated ${timeAgo(ratesMeta.fetched_at)}`
+                  : '● Fallback (offline)'}
+              </span>
+            )}
+          </div>
+          <button
+            onClick={refreshRates}
+            disabled={refreshingRates}
+            className="flex items-center gap-2 px-3 py-1.5 text-sm border border-[#C8BFA8] rounded-lg hover:bg-[#F5F0E8] disabled:opacity-50"
+          >
+            <RefreshCw size={14} className={refreshingRates ? 'animate-spin' : ''} />
+            {refreshingRates ? 'Refreshing…' : 'Refresh rates'}
+          </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -273,6 +333,11 @@ export default function Settings() {
               onChange={(e) => setSettings({ ...settings, usdIdrRate: Number(e.target.value) })}
               className="mt-1 w-full px-3 py-2 border border-[#C8BFA8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3A7010] text-sm"
             />
+            {ratesMeta && (
+              <p className="text-xs text-[#8A7A60] mt-1">
+                {ratesMeta.is_live?.usd_idr ? 'Live FX feed' : 'Default (offline)'}
+              </p>
+            )}
           </div>
           <div>
             <label className="text-sm font-medium">Carbon Price (Rp/tCO₂)</label>
@@ -282,6 +347,11 @@ export default function Settings() {
               onChange={(e) => setSettings({ ...settings, carbonPrice: Number(e.target.value) })}
               className="mt-1 w-full px-3 py-2 border border-[#C8BFA8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3A7010] text-sm"
             />
+            {ratesMeta && (
+              <p className="text-xs text-[#8A7A60] mt-1">
+                {ratesMeta.is_live?.carbon_price ? 'Live carbon feed' : 'Default (no live source)'}
+              </p>
+            )}
           </div>
         </div>
       </div>

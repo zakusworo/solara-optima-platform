@@ -41,6 +41,14 @@ class Settings(BaseSettings):
     USD_IDR_RATE: float = 15500.0
     CARBON_PRICE: float = 50000.0  # Rp/tCO2
 
+    # Live market rates — fetched at startup, falling back to the values above.
+    ENABLE_LIVE_RATES: bool = True
+    FX_RATES_URL: str = "https://open.er-api.com/v6/latest/USD"  # free, no API key
+    # Optional carbon-price source (JSON with `price_idr_per_tco2` or `price`).
+    # None -> keep the CARBON_PRICE default (no free live IDR carbon feed yet).
+    CARBON_PRICE_URL: Optional[str] = None
+    RATES_TTL_HOURS: int = 6
+
     # Database
     DATABASE_URL: str = "postgresql://user:***@localhost:5432/solara_optima"
     DATABASE_ECHO: bool = False

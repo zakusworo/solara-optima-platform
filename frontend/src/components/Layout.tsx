@@ -6,6 +6,7 @@ import {
   Settings as SettingsIcon,
   BarChart3,
   Cpu,
+  Store,
   Menu,
   X,
   MapPin,
@@ -91,6 +92,7 @@ export default function Layout() {
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: BarChart3 },
+    { name: 'Solar Marketplace', href: '/marketplace', icon: Store },
     { name: 'Optimization', href: '/optimize', icon: Cpu },
     { name: 'Solar Forecast', href: '/solar', icon: Sun },
     { name: 'Generators', href: '/generators', icon: Zap },
@@ -122,18 +124,18 @@ export default function Layout() {
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#3A7010] to-[#5A9E30] flex items-center justify-center">
                 <Sun size={24} className="text-white" />
               </div>
-              <div>
-                <h1 className="text-xl font-bold">Solara Optima</h1>
-                <div className="flex items-center gap-1 text-base text-[#8A7A60] font-mono">
+              <div className="min-w-0">
+                <h1 className="text-base font-bold leading-tight">Solara Optima</h1>
+                <div className="flex items-center gap-1 text-xs text-[#8A7A60] font-mono">
                   {locLoading ? (
                     <>
-                      <Loader2 size={14} className="animate-spin" />
-                      <span className="text-sm">Locating...</span>
+                      <Loader2 size={12} className="animate-spin shrink-0" />
+                      <span>Locating...</span>
                     </>
                   ) : (
                     <>
-                      <MapPin size={14} />
-                      <span>{userLocation?.label || 'Bandung, ID'}</span>
+                      <MapPin size={12} className="shrink-0" />
+                      <span className="truncate">{userLocation?.label || 'Bandung, ID'}</span>
                     </>
                   )}
                 </div>

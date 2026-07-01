@@ -1,0 +1,70 @@
+{
+  "_disclaimer": "Illustrative sample financing products for demo purposes only. Rates, tenors and tickets are placeholders; replace with real, signed lender/PPA-provider terms before go-live.",
+  "financiers": [
+    {
+      "id": "fin-green-term-loan",
+      "name": "Green Rooftop Term Loan",
+      "type": "loan",
+      "provider_kind": "Commercial bank",
+      "interest_rate": 0.115,
+      "tenor_months_max": 84,
+      "down_payment_pct": 0.10,
+      "min_ticket_idr": 50000000,
+      "max_ticket_idr": 50000000000,
+      "segments": ["commercial", "industrial"],
+      "description": "Asset-backed term loan for C&I rooftop, up to 90% LTV, 7-year tenor."
+    },
+    {
+      "id": "fin-kur-hijau",
+      "name": "KUR Hijau (Micro Green Loan)",
+      "type": "loan",
+      "provider_kind": "State micro-lender",
+      "interest_rate": 0.06,
+      "tenor_months_max": 60,
+      "down_payment_pct": 0.0,
+      "min_ticket_idr": 10000000,
+      "max_ticket_idr": 500000000,
+      "segments": ["residential", "commercial"],
+      "description": "Subsidized micro-loan for MSMEs and households, low rate, no down payment."
+    },
+    {
+      "id": "fin-solar-ppa",
+      "name": "Zero-CapEx Solar PPA",
+      "type": "ppa",
+      "provider_kind": "IPP / developer",
+      "ppa_discount_vs_tariff": 0.15,
+      "ppa_escalation": 0.02,
+      "term_years": 20,
+      "min_ticket_idr": 500000000,
+      "max_ticket_idr": 100000000000,
+      "segments": ["commercial", "industrial"],
+      "description": "Developer funds, owns and operates the system; customer buys solar kWh 15% below PLN tariff. No upfront cost."
+    },
+    {
+      "id": "fin-lease-to-own",
+      "name": "Solar Lease-to-Own",
+      "type": "lease",
+      "provider_kind": "Leasing / multifinance",
+      "interest_rate": 0.14,
+      "tenor_months_max": 72,
+      "down_payment_pct": 0.05,
+      "min_ticket_idr": 25000000,
+      "max_ticket_idr": 5000000000,
+      "segments": ["residential", "commercial"],
+      "description": "Operating lease with ownership transfer at end of term; low down payment."
+    },
+    {
+      "id": "fin-p2p-solar",
+      "name": "Solar P2P Financing",
+      "type": "loan",
+      "provider_kind": "Fintech P2P",
+      "interest_rate": 0.16,
+      "tenor_months_max": 48,
+      "down_payment_pct": 0.0,
+      "min_ticket_idr": 20000000,
+      "max_ticket_idr": 2000000000,
+      "segments": ["residential", "commercial"],
+      "description": "Crowd-funded loan, fast approval, no collateral for small tickets."
+    }
+  ]
+}

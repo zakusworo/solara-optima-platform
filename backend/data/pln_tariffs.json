@@ -1,0 +1,16 @@
+{
+  "_note": "Representative PLN non-subsidized tariff groups (Rp/kWh). Illustrative values based on 2024-2025 tariff adjustment brackets; edit to match the latest PLN tariff decree before production use.",
+  "currency": "IDR",
+  "tariffs": [
+    { "code": "R-1/TR-900-RTM", "name": "Household 900 VA (RTM, non-subsidy)", "segment": "residential", "price_idr_per_kwh": 1352.0 },
+    { "code": "R-1/TR-1300", "name": "Household 1,300 VA", "segment": "residential", "price_idr_per_kwh": 1444.70 },
+    { "code": "R-1/TR-2200", "name": "Household 2,200 VA", "segment": "residential", "price_idr_per_kwh": 1444.70 },
+    { "code": "R-2/TR-3500-5500", "name": "Household 3,500-5,500 VA", "segment": "residential", "price_idr_per_kwh": 1699.53 },
+    { "code": "R-3/TR-6600+", "name": "Household >= 6,600 VA", "segment": "residential", "price_idr_per_kwh": 1699.53 },
+    { "code": "B-2/TR-6600-200k", "name": "Business 6,600 VA - 200 kVA (LV)", "segment": "commercial", "price_idr_per_kwh": 1444.70 },
+    { "code": "B-3/TM-200k+", "name": "Business > 200 kVA (MV)", "segment": "commercial", "price_idr_per_kwh": 1114.74 },
+    { "code": "P-1/TR", "name": "Government office <= 200 kVA", "segment": "commercial", "price_idr_per_kwh": 1699.53 },
+    { "code": "I-3/TM-200k+", "name": "Industry > 200 kVA (MV)", "segment": "industrial", "price_idr_per_kwh": 1114.74 },
+    { "code": "I-4/TT-30M+", "name": "Industry >= 30 MVA (HV)", "segment": "industrial", "price_idr_per_kwh": 996.74 }
+  ]
+}

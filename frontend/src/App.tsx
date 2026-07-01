@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
+import Marketplace from './pages/Marketplace'
 import Optimization from './pages/Optimization'
 import SolarForecast from './pages/SolarForecast'
 import Generators from './pages/Generators'
@@ -11,6 +12,7 @@ function App() {
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route index element={<Dashboard />} />
+        <Route path="marketplace" element={<Marketplace />} />
         <Route path="optimize" element={<Optimization />} />
         <Route path="solar" element={<SolarForecast />} />
         <Route path="generators" element={<Generators />} />

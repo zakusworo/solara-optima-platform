@@ -49,3 +49,6 @@ data/*.html
 *.zip
 *.pkl
 *.joblib
+
+# Runtime-generated marketplace leads
+backend/data/leads.jsonl

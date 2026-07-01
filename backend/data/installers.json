@@ -1,0 +1,89 @@
+{
+  "_disclaimer": "Illustrative sample data for demo purposes only. Names are fictitious; replace with vetted, contracted EPC/installer partners and real capabilities before go-live.",
+  "installers": [
+    {
+      "id": "ins-surya-nusantara",
+      "name": "Surya Nusantara Energi",
+      "regions": ["nationwide"],
+      "min_kwp": 3,
+      "max_kwp": 2000,
+      "segments": ["residential", "commercial", "industrial"],
+      "rating": 4.7,
+      "projects_completed": 340,
+      "offering": "Turnkey rooftop EPC, O&M, PLN permitting (SLO/PJBL)",
+      "warranty_years": 25,
+      "lead_time_weeks": 6,
+      "contact": "partnerships@example.com"
+    },
+    {
+      "id": "ins-mentari-solar",
+      "name": "Mentari Solar Indonesia",
+      "regions": ["Jawa Barat", "DKI Jakarta", "Banten", "Jawa Tengah"],
+      "min_kwp": 2,
+      "max_kwp": 500,
+      "segments": ["residential", "commercial"],
+      "rating": 4.5,
+      "projects_completed": 210,
+      "offering": "Residential & SME rooftop, monitoring app, financing referral",
+      "warranty_years": 25,
+      "lead_time_weeks": 4,
+      "contact": "sales@example.com"
+    },
+    {
+      "id": "ins-khatulistiwa-pv",
+      "name": "Khatulistiwa PV Solutions",
+      "regions": ["Sumatera Utara", "Riau", "Sumatera Barat", "nationwide"],
+      "min_kwp": 10,
+      "max_kwp": 5000,
+      "segments": ["commercial", "industrial"],
+      "rating": 4.6,
+      "projects_completed": 95,
+      "offering": "C&I rooftop EPC, ground-mount, PPA structuring support",
+      "warranty_years": 25,
+      "lead_time_weeks": 8,
+      "contact": "ci@example.com"
+    },
+    {
+      "id": "ins-archipelago-solar",
+      "name": "Archipelago Solar EPC",
+      "regions": ["Bali", "Nusa Tenggara Barat", "Nusa Tenggara Timur", "Sulawesi Selatan"],
+      "min_kwp": 5,
+      "max_kwp": 1000,
+      "segments": ["commercial", "industrial", "residential"],
+      "rating": 4.4,
+      "projects_completed": 128,
+      "offering": "Island & resort rooftop + storage, off-grid hybrid",
+      "warranty_years": 20,
+      "lead_time_weeks": 7,
+      "contact": "hello@example.com"
+    },
+    {
+      "id": "ins-garuda-renewables",
+      "name": "Garuda Renewables",
+      "regions": ["nationwide"],
+      "min_kwp": 100,
+      "max_kwp": 20000,
+      "segments": ["industrial", "commercial"],
+      "rating": 4.8,
+      "projects_completed": 62,
+      "offering": "Utility-scale & large C&I rooftop, EPC + long-term O&M",
+      "warranty_years": 25,
+      "lead_time_weeks": 12,
+      "contact": "projects@example.com"
+    },
+    {
+      "id": "ins-tropikal-energy",
+      "name": "Tropikal Energy",
+      "regions": ["Jawa Timur", "Jawa Tengah", "DI Yogyakarta", "Bali"],
+      "min_kwp": 2,
+      "max_kwp": 300,
+      "segments": ["residential", "commercial"],
+      "rating": 4.3,
+      "projects_completed": 176,
+      "offering": "SME rooftop specialist, fast install, bill-savings guarantee",
+      "warranty_years": 25,
+      "lead_time_weeks": 3,
+      "contact": "cs@example.com"
+    }
+  ]
+}

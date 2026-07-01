@@ -2,6 +2,8 @@
 Main FastAPI application entry point
 """
 
+import asyncio
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
@@ -11,12 +13,15 @@ from app.api import (
     forecast,
     generators,
     location,
+    market,
+    marketplace,
     optimize,
     pv_modules,
     weather,
 )
 from app.core.config import settings
 from app.core.logging import setup_logging
+from app.services.market_rates import market_rates_service
 
 
 def create_application() -> FastAPI:
@@ -70,6 +75,12 @@ def create_application() -> FastAPI:
     application.include_router(
         pv_modules.router, prefix="/api/v1/pv", tags=["PV Modules"]
     )
+    application.include_router(
+        marketplace.router, prefix="/api/v1/marketplace", tags=["Marketplace"]
+    )
+    application.include_router(
+        market.router, prefix="/api/v1/market", tags=["Market"]
+    )
 
     @application.get("/")
     async def root():
@@ -108,6 +119,12 @@ def create_application() -> FastAPI:
         settings.DATA_DIR.mkdir(parents=True, exist_ok=True)
         settings.WEATHER_DIR.mkdir(parents=True, exist_ok=True)
         settings.LOAD_PROFILES_DIR.mkdir(parents=True, exist_ok=True)
+
+        # Kick off a non-blocking live market-rates refresh (USD/IDR + carbon).
+        # Falls back to configured defaults on any failure; never blocks startup.
+        if settings.ENABLE_LIVE_RATES:
+            asyncio.create_task(asyncio.to_thread(market_rates_service.refresh))
+            logger.info("Live market-rates refresh scheduled")
 
     @application.on_event("shutdown")
     async def shutdown_event():

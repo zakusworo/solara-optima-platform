@@ -9,8 +9,14 @@ export default function Dashboard() {
     queryKey: ['health'],
     queryFn: async () => {
       const response = await api.get('/')
-      return response.data
+      // The backend root is only reachable when VITE_API_URL points at it.
+      // In local dev the API base is empty and "/" isn't proxied, so this
+      // returns the SPA's index.html (a string). Only accept a JSON object.
+      return typeof response.data === 'object' && response.data !== null
+        ? response.data
+        : null
     },
+    retry: false,
   })
 
   const { data: solarResource } = useQuery({
@@ -62,23 +68,28 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {/* Status Banner */}
-      {healthData && (
-        <div className="bg-gradient-to-r from-[#3A7010] to-[#5A9E30] rounded-xl p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold">{healthData.app}</h2>
-              <p className="text-sm opacity-90 mt-1">
-                Location: {healthData.location.latitude}°S, {healthData.location.longitude}°E
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold">{healthData.version}</p>
-              <p className="text-sm opacity-90">System Ready</p>
+      {/* Status Banner — location comes from health (prod) or the proxied
+          solar-resource endpoint (dev), so it renders in both environments. */}
+      {(() => {
+        const bannerLocation = healthData?.location ?? solarResource?.location
+        if (!bannerLocation) return null
+        return (
+          <div className="bg-gradient-to-r from-[#3A7010] to-[#5A9E30] rounded-xl p-6 text-white">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">{healthData?.app ?? 'Solara Optima Platform'}</h2>
+                <p className="text-sm opacity-90 mt-1">
+                  Location: {bannerLocation.latitude}°S, {bannerLocation.longitude}°E
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-bold">{healthData?.version ?? 'v1.0.0'}</p>
+                <p className="text-sm opacity-90">System Ready</p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* Solar Resource Stats */}
       <div>
