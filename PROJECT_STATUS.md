@@ -1,10 +1,14 @@
 # Solara Optima — Project Status
 
-**Last updated:** 2026-07-01
+**Last updated:** 2026-07-03
 **Purpose:** Rooftop-solar **aggregation & financing marketplace** for Indonesia, built on
 top of a pvlib solar engine + UC/ED dispatch optimizer.
+**Stack:** FastAPI + pvlib + PuLP/CBC backend, React 18 + Vite + TypeScript frontend.
 **Context:** Being prepared for the **Climate Impact Innovations Challenge (CIIC) 2026**
 (Energy Transition track). Submission deadline: **8 July 2026**.
+
+> All commits are by **Zulfikar Aji Kusworo &lt;greataji13@gmail.com&gt;** — single
+> committer, no co-authors. Current default branch `main` mirrors `origin/main`.
 
 ---
 
@@ -13,10 +17,11 @@ top of a pvlib solar engine + UC/ED dispatch optimizer.
 | Component | Status | Notes |
 |---|---|---|
 | Backend API (FastAPI) | ✅ Working | Imports clean, all routers mounted |
-| UC/ED MILP optimizer | ✅ Working | Smoke test → Optimal (Rp 3.39M, ~1.9s) |
-| Solar forecasting (pvlib) | ✅ Working | Clear-sky **and** real PVGIS TMY; per-location |
+| UC/ED MILP optimizer | ✅ Working | Smoke test → Optimal (Rp 3.39M, ~1.9s); fleet from shared store drives dispatch |
+| Solar forecasting (pvlib) | ✅ Working | Clear-sky **and** real PVGIS TMY; per-location; auto forecast anchored to local midnight |
+| PV module DB (CEC) | ✅ Working | 21,677 real panels; manufacturer/technology dropdowns populated from live DB |
 | **Solar Marketplace** | ✅ Working | Sizing + financing + CO₂ + matching + leads |
-| **Live market rates** | ✅ Working | USD/IDR live at startup; carbon = config fallback |
+| **Live market rates** | ✅ Working | Real-time USD/IDR + carbon price at startup and on demand, offline fallback |
 | **Real irradiance (PVGIS)** | ✅ Working | ERA5 TMY for yield + /forecast; clear-sky fallback |
 | **Carbon credits (I-REC)** | ✅ Working | Per-quote + portfolio I-REC / avoided-CO₂ / revenue |
 | **Error boundary + offline banner** | ✅ Working | Friendly crash fallback; `/api/v1/health` banner |
@@ -24,7 +29,9 @@ top of a pvlib solar engine + UC/ED dispatch optimizer.
 | Frontend (React/Vite) | ✅ Builds & runs | Route-level lazy + `manualChunks` |
 | Dashboard white-screen bug | ✅ Fixed | Was a pre-existing crash (see §4) |
 | Demo assets | ✅ Done | `docs/DEMO.md` + screenshots |
+| Settings persistence | ⚠️ Partial | `Save` persists **location** only (see §6a) |
 | Real partner/tariff data | ⚠️ Sample (labeled) | Provenance + UI badge; replace before go-live |
+| Result store | ⚠️ In-process | `OrderedDict`, single worker; Redis when scaling (see §6a) |
 
 ---
 
@@ -126,10 +133,24 @@ docs/
 
 ---
 
+## 4d. Fix cycle (2026-07-01, late) — forecast + dispatch wiring
+
+1. `ce4d546` **PV module manufacturer dropdown** — now uses real CEC manufacturers
+   (dynamic from the live DB + case-insensitive filter; placeholder row dropped).
+2. `12a8ba4` **Shared fleet store drives optimization dispatch** — the generator fleet
+   configured on the **Generators** page (preset/template buttons wired, editable fleet
+   + solar/battery) is what the Optimization page sends; per-generator chart series are
+   rendered from the real result instead of hardcoded values.
+3. `e8c929b` **Auto solar forecast anchored to local midnight** — was starting at
+   `now()`, shifting solar ~7h (solar at night, zero at midday); now peaks at noon.
+
+---
+
 ## 5. Verified
 
 - `backend/test_api.py` — optimizer + solar forecast pass.
-- `backend/test_marketplace.py` — finance primitives + estimate invariants pass.
+- `backend/test_marketplace.py` — finance primitives + estimate invariants pass
+  (re-run 2026-07-03: all pass; payback 7.5y, IRR 14%, bankability 72/100).
 - `backend/test_marketplace_api.py` — provenance, PVGIS-with-coords, leads store,
   admin gating (503/403/200), rate limit (429), email/name validation pass.
 - PVGIS yields verified (Jakarta 1412, Denpasar 1544, Medan 1310 kWh/kWp/yr) with
@@ -154,23 +175,78 @@ docs/
 | 5 | Leads to `leads.jsonl`, no DB/auth | ⚠️ **Mitigated** — hardened thread-safe atomic store, per-IP rate limiting, email/name validation, and token-gated admin list/export endpoints (`LEADS_ADMIN_TOKEN`). Full DB + auth still pending (ROADMAP §7). |
 | 6 | Carbon price / credit monetisation | ⚠️ **Partially addressed** — an I-REC carbon-credit estimate (issuable certs, avoided tCO₂, indicative revenue) is now surfaced per-quote and in the portfolio; the I-REC unit price is a configurable default (USD). **Still pending:** a live I-REC/IDXCarbon price feed and a real dMRV/registry integration. |
 
+### 6a. Open gaps (not yet worked around)
+
+- **Settings persistence** — `Save` persists **location** only. USD/IDR + carbon price
+  are live-fed (backend is source of truth), but solver / PV-default / override fields
+  have no backend persistence endpoint and are local-only. Needs a `/settings` save
+  endpoint to make them stick.
+- **Result store** — in-process `OrderedDict` (single worker); replace with Redis when
+  scaling horizontally.
+
 ---
 
 ## 7. Run
 
 ```bash
-# Backend
+# Backend (FastAPI + uvicorn, with live reload)
 cd backend && source .venv/bin/activate
-uvicorn app.main:app --reload --port 8000
-# Frontend
-cd frontend && npm run dev            # http://localhost:3000
+uvicorn app.main:app --reload --port 8000      # health: GET /api/v1/health
+
+# Frontend (Vite dev server on :3000, proxies /api → :8000)
+cd frontend && npm run dev                      # open http://localhost:3000
 ```
 Both must run: pages load without the backend, but data calls will fail quietly.
+
+Smoke test: `cd backend && python test_marketplace.py`.
+Demo guide: [`docs/DEMO.md`](docs/DEMO.md). Marketplace spec: [`docs/MARKETPLACE.md`](docs/MARKETPLACE.md).
 
 ---
 
 ## 8. Next steps
+
 See [`docs/ROADMAP.md`](docs/ROADMAP.md). Remaining priorities: replace sample partner
 data with real contracted partners/tariffs, add a live carbon-price source (IDXCarbon),
-move leads to a DB + auth (ROADMAP §7), wire real weather into the `/forecast` endpoint,
-and (for the pitch) fill the CIIC form fields using [`docs/MARKETPLACE.md`](docs/MARKETPLACE.md).
+move leads to a DB + auth (ROADMAP §7), add a `/settings` save endpoint, and (for the
+pitch) fill the CIIC form fields using [`docs/MARKETPLACE.md`](docs/MARKETPLACE.md).
+
+---
+
+## 9. Commit history
+
+Reverse-chronological. All commits by Zulfikar Aji Kusworo.
+
+| Date       | Commit   | Message |
+|------------|----------|---------|
+| 2026-07-01 | `19364d0` | docs: add project-status.md with current status and full commit history |
+| 2026-07-01 | `e8c929b` | fix(optimize): anchor auto solar forecast to local midnight |
+| 2026-07-01 | `12a8ba4` | feat(generators): shared fleet store drives optimization dispatch |
+| 2026-07-01 | `ce4d546` | fix(forecast): PV module manufacturer dropdown uses real CEC manufacturers |
+| 2026-07-01 | `023c750` | feat: carbon-credit (I-REC) module + real PVGIS in /forecast + demo safety |
+| 2026-07-01 | `bbca64f` | feat: workarounds for known limitations 1-5 (PVGIS, province->yield, bundle split, leads, provenance) |
+| 2026-07-01 | `9f30c0a` | feat: solar aggregation & financing marketplace + live market rates |
+| 2026-05-10 | `0c97323` | fix(ci): unblock CI by removing dead dep and correcting trivy tag |
+| 2026-05-10 | `6dbda5b` | docs: add May 2026 security & quality hardening to Recent Updates |
+| 2026-05-10 | `f1cba63` | fix(compose): add healthchecks for all services |
+| 2026-05-10 | `6389e26` | fix: resolve MEDIUM audit issues |
+| 2026-05-10 | `53d0e81` | docs: remove institutional affiliation from README, QUICKSTART, setup.sh |
+| 2026-05-10 | `e9b67bd` | fix(security,ci): resolve HIGH severity audit issues + harden CI |
+| 2026-05-10 | `bfc3d9e` | fix(critical): resolve 6 critical issues from audit |
+| 2026-04-24 | `7000e67` | docs: Major README overhaul with new features — PV module DB, geolocation, BESS fix, API table, architecture diagram |
+| 2026-04-24 | `4e3213c` | feat: PV module DB, location auto-detect, hourly load editor, BESS fix |
+| 2026-04-23 | `10669b5` | feat(location): Add interactive map + geocoding |
+| 2026-04-23 | `ddae488` | fix(ui): Replace `<a>` tags with `<Link>` for SPA navigation in Dashboard |
+| 2026-04-23 | `13d4f5c` | fix(frontend): Fix build errors - rename config to .cjs, add tsconfig.node.json, add plotly declarations, relax strict TS |
+| 2026-04-23 | `affaf68` | refactor: Rename all Solar UC/ED references to Solara Optima Platform |
+| 2026-04-19 | `a72c884` | Update Ollama models: Switch all references to qwen3.5 |
+| 2026-04-19 | `71a0c96` | Update DOI to 10.5281/zenodo.19653510 |
+| 2026-04-19 | `7f30bd3` | Update README: Add screenshot and update author affiliation |
+| 2026-04-19 | `004931d` | Add dashboard screenshot to docs |
+| 2026-04-19 | `ead4366` | Update web demo: Switch from green to blue color scheme |
+| 2026-04-19 | `d3b1a4f` | Fix CI/CD pipeline: simplify jobs and add error tolerance |
+| 2026-04-19 | `07c317a` | Update: MIT License, repo description, and switch to Qwen3.5 |
+| 2026-04-19 | `d737d03` | Add GitHub Actions CI/CD pipeline |
+| 2026-04-19 | `a6cf936` | Initial commit: Solara Optima Platform v1.0.0 |
+
+> Regenerate the table with:
+> `git log --pretty=format:'| %ad | \`%h\` | %s |' --date=format:'%Y-%m-%d'`
