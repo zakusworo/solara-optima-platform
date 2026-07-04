@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Play, RefreshCw, Zap, Sun, Battery, Edit3, Layers } from 'lucide-react'
+import { Play, RefreshCw, Zap, Sun, Battery, Edit3, Layers, Sparkles } from 'lucide-react'
 import LazyPlot from '../components/LazyPlot'
+import AiStatusChip from '../components/AiStatusChip'
 import { api } from '../utils/api'
 import { useFleet, fleetToApiGenerators } from '../store/fleet'
 
@@ -16,6 +17,36 @@ export default function Optimization() {
   const [loadProfile, setLoadProfile] = useState<number[]>(Array(24).fill(0))
   const [isRunning, setIsRunning] = useState(false)
   const [result, setResult] = useState<any>(null)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiMeta, setAiMeta] = useState<any>(null)
+
+  // Fill the hourly editor from the LLM forecasting agent. The endpoint
+  // degrades gracefully: without Ollama it returns a statistical fallback,
+  // and aiMeta.method/model tell the user which path produced the numbers.
+  const loadAiForecast = async () => {
+    setAiLoading(true)
+    try {
+      const response = await api.get('/api/v1/ai/load', { params: { hours: 24 } })
+      const data = response.data.data
+      const values: number[] = (data.forecast || []).slice(0, 24).map((v: number) => Math.round(Number(v) || 0))
+      if (values.length < 24) {
+        alert('AI forecast returned fewer than 24 hours of data.')
+        return
+      }
+      setLoadProfile(values)
+      setAiMeta({
+        method: data.method,
+        model: data.model,
+        confidence: data.confidence,
+        data_source: data.data_source,
+      })
+    } catch (error) {
+      console.error('AI load forecast failed:', error)
+      alert('AI load forecast failed. Check console for details.')
+    } finally {
+      setAiLoading(false)
+    }
+  }
 
   // Sample load profile (24 hours)
   const loadSample = () => {
@@ -26,6 +57,7 @@ export default function Optimization() {
       170, 165, 150, 130, 110, 95,
     ]
     setLoadProfile([...sample])
+    setAiMeta(null)
   }
 
   const updateLoad = (hour: number, value: string) => {
@@ -97,13 +129,25 @@ export default function Optimization() {
             <h2 className="font-semibold flex items-center gap-2">
               <Zap size={18} className="text-[#A07010]" />
               Load Profile
+              <AiStatusChip />
             </h2>
-            <button
-              onClick={loadSample}
-              className="text-sm px-3 py-1.5 bg-[#EDE8DC] rounded-md hover:bg-[#E4DDD0]"
-            >
-              Load Sample
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={loadSample}
+                className="text-sm px-3 py-1.5 bg-[#EDE8DC] rounded-md hover:bg-[#E4DDD0]"
+              >
+                Load Sample
+              </button>
+              <button
+                onClick={loadAiForecast}
+                disabled={aiLoading}
+                title="Fill the editor with a 24 h load forecast from the AI forecasting agent"
+                className="flex items-center gap-1.5 text-sm px-3 py-1.5 bg-[#5A4E8A] text-white rounded-md hover:bg-[#4A3E7A] disabled:opacity-50"
+              >
+                {aiLoading ? <RefreshCw className="animate-spin" size={14} /> : <Sparkles size={14} />}
+                {aiLoading ? 'Forecasting...' : 'AI Forecast'}
+              </button>
+            </div>
           </div>
 
           {/* Chart */}
@@ -163,6 +207,20 @@ export default function Optimization() {
                 </div>
               ))}
             </div>
+            {aiMeta && (
+              <div className="mt-3 flex items-start gap-2 p-2.5 bg-[#EFEDF7] rounded-md text-xs text-[#5A4E8A]">
+                <Sparkles size={14} className="mt-0.5 shrink-0" />
+                <span>
+                  Profile from AI forecasting agent — method:{' '}
+                  <span className="font-mono">{aiMeta.method}</span>, model:{' '}
+                  <span className="font-mono">{aiMeta.model}</span>, confidence:{' '}
+                  <span className="font-mono">{(aiMeta.confidence * 100).toFixed(0)}%</span>
+                  {aiMeta.data_source === 'synthetic' && (
+                    <> · input: synthetic history (demo) — edit values freely before running</>
+                  )}
+                </span>
+              </div>
+            )}
             <div className="mt-3 flex items-center justify-between text-xs text-[#8A7A60]">
               <span>
                 Total daily load: {' '}

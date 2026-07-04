@@ -33,7 +33,19 @@ class AIForecastingService:
         """Check if Ollama is available and models are loaded"""
         try:
             response = ollama.list()
-            models = [m["name"] for m in response.get("models", [])]
+            # ollama-python >=0.4 returns a ListResponse of Model objects
+            # (name under .model); older versions returned dicts keyed "name".
+            raw_models = getattr(response, "models", None)
+            if raw_models is None and isinstance(response, dict):
+                raw_models = response.get("models", [])
+            models = [
+                (
+                    m.get("name") or m.get("model")
+                    if isinstance(m, dict)
+                    else getattr(m, "model", None) or getattr(m, "name", None)
+                )
+                for m in raw_models or []
+            ]
             logger.info(f"Available Ollama models: {models}")
             return True
         except Exception as e:
@@ -70,11 +82,14 @@ class AIForecastingService:
         )
 
         try:
-            # Call Ollama
+            # Call Ollama. think=False disables chain-of-thought on thinking
+            # models (qwen3+); on CPU-only hosts reasoning tokens make a
+            # simple forecast take many minutes instead of seconds.
             response = ollama.generate(
                 model=self.model,
                 prompt=prompt,
                 stream=False,
+                think=False,
             )
 
             # Parse response
@@ -297,6 +312,7 @@ Output JSON with:
                 model=self.model,
                 prompt=prompt,
                 stream=False,
+                think=False,
             )
 
             # Parse response

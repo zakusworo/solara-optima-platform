@@ -5,7 +5,14 @@ import { lazy, Suspense } from 'react'
 // being eagerly bundled into every page. Combined with route-level
 // React.lazy() and the vite manualChunks split, this keeps the initial
 // bundle small and makes plotly a dedicated, cacheable on-demand chunk.
-const Plot = lazy(() => import('react-plotly.js'))
+// react-plotly.js ships CJS; depending on the bundler's interop the component
+// may sit at module.default or module.default.default. Normalize both shapes
+// so React.lazy always receives a component.
+const Plot = lazy(() =>
+  import('react-plotly.js').then((mod: any) => ({
+    default: mod.default?.default ?? mod.default ?? mod,
+  })),
+)
 
 export default function LazyPlot(props: Record<string, any>) {
   const { style, ...rest } = props

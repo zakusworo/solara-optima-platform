@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Sun, Download, Search, ChevronDown, ChevronUp, Check } from 'lucide-react'
+import { Sun, Download, Search, ChevronDown, ChevronUp, Check, Sparkles, RefreshCw } from 'lucide-react'
 import LazyPlot from '../components/LazyPlot'
+import AiStatusChip from '../components/AiStatusChip'
 import { api } from '../utils/api'
 
 interface PVModule {
@@ -37,6 +38,34 @@ export default function SolarForecast() {
   const [forecast, setForecast] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [weatherSource, setWeatherSource] = useState<'pvgis_window' | 'clearsky'>('pvgis_window')
+
+  // AI refinement of the pvlib base forecast (Ollama agent; graceful fallback)
+  const [cloudCover, setCloudCover] = useState(40)
+  const [ambientTemp, setAmbientTemp] = useState(30)
+  const [refining, setRefining] = useState(false)
+  const [refined, setRefined] = useState<any>(null)
+
+  const refineWithAi = async () => {
+    if (!forecast?.generation?.length) return
+    setRefining(true)
+    try {
+      // Endpoint caps input at 168 values (one week hourly)
+      const base = forecast.generation.slice(0, 168).map((g: number) => (Number(g) || 0).toFixed(2))
+      const response = await api.get('/api/v1/ai/solar/refine', {
+        params: {
+          pvlib_forecast: base.join(','),
+          cloud_cover: cloudCover,
+          temperature: ambientTemp,
+        },
+      })
+      setRefined(response.data.data)
+    } catch (error) {
+      console.error('AI refinement failed:', error)
+      alert('AI refinement failed. Check console for details.')
+    } finally {
+      setRefining(false)
+    }
+  }
 
   // PV Module selection state
   const [modules, setModules] = useState<PVModule[]>([])
@@ -139,6 +168,7 @@ export default function SolarForecast() {
       data.selected_module = selectedModule
       data.manual_mode = manualMode
       setForecast(data)
+      setRefined(null)
     } catch (error) {
       console.error('Forecast failed:', error)
       alert('Failed to generate forecast')
@@ -536,6 +566,136 @@ export default function SolarForecast() {
                 style={{ width: '100%', height: '100%' }}
               />
             </div>
+          </div>
+
+          {/* AI Refinement */}
+          <div className="bg-white rounded-xl border border-[#C8BFA8] p-6">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="font-semibold flex items-center gap-2">
+                <Sparkles size={18} className="text-[#5A4E8A]" />
+                AI Weather Refinement
+                <AiStatusChip />
+              </h3>
+              <button
+                onClick={refineWithAi}
+                disabled={refining}
+                className="flex items-center gap-1.5 text-sm px-4 py-2 bg-[#5A4E8A] text-white rounded-lg hover:bg-[#4A3E7A] disabled:opacity-50"
+              >
+                {refining ? <RefreshCw className="animate-spin" size={14} /> : <Sparkles size={14} />}
+                {refining ? 'Refining...' : 'Refine with AI'}
+              </button>
+            </div>
+            <p className="text-xs text-[#8A7A60] mb-4">
+              The forecasting agent adjusts the pvlib base forecast for expected weather.
+              The physics numbers stay pvlib's — the agent only applies weather corrections
+              with uncertainty bounds.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="text-sm font-medium">
+                  Expected cloud cover: <span className="font-mono">{cloudCover}%</span>
+                </label>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={cloudCover}
+                  onChange={(e) => setCloudCover(Number(e.target.value))}
+                  className="mt-2 w-full accent-[#5A4E8A]"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">
+                  Expected temperature: <span className="font-mono">{ambientTemp}°C</span>
+                </label>
+                <input
+                  type="range"
+                  min={15}
+                  max={45}
+                  step={1}
+                  value={ambientTemp}
+                  onChange={(e) => setAmbientTemp(Number(e.target.value))}
+                  className="mt-2 w-full accent-[#5A4E8A]"
+                />
+              </div>
+            </div>
+
+            {refined && (
+              <div className="space-y-3">
+                <div className="h-64">
+                  <LazyPlot
+                    data={[
+                      {
+                        x: forecast.timestamps.map((t: string) => new Date(t).getHours()),
+                        y: (refined.uncertainty_upper || []).map((g: number) => Number(g) || 0),
+                        type: 'scatter',
+                        mode: 'lines',
+                        line: { width: 0 },
+                        showlegend: false,
+                        hoverinfo: 'skip',
+                      },
+                      {
+                        x: forecast.timestamps.map((t: string) => new Date(t).getHours()),
+                        y: (refined.uncertainty_lower || []).map((g: number) => Number(g) || 0),
+                        type: 'scatter',
+                        mode: 'lines',
+                        line: { width: 0 },
+                        fill: 'tonexty',
+                        fillcolor: 'rgba(90,78,138,0.15)',
+                        name: 'Uncertainty band',
+                        hoverinfo: 'skip',
+                      },
+                      {
+                        x: forecast.timestamps.map((t: string) => new Date(t).getHours()),
+                        y: forecast.generation.map((g: number) => Number(g) || 0),
+                        type: 'scatter',
+                        mode: 'lines',
+                        line: { color: '#3A7A18', width: 2, dash: 'dot' },
+                        name: 'pvlib base (kW)',
+                      },
+                      {
+                        x: forecast.timestamps.map((t: string) => new Date(t).getHours()),
+                        y: (refined.adjusted_forecast || []).map((g: number) => Number(g) || 0),
+                        type: 'scatter',
+                        mode: 'lines+markers',
+                        line: { color: '#5A4E8A', width: 2 },
+                        marker: { size: 5 },
+                        name: 'AI-adjusted (kW)',
+                      },
+                    ]}
+                    layout={{
+                      margin: { t: 20, b: 40, l: 50, r: 20 },
+                      xaxis: { title: 'Hour of Day', tickmode: 'linear', dtick: 3 },
+                      yaxis: { title: 'Generation (kW)' },
+                      legend: { orientation: 'h', y: -0.2 },
+                    }}
+                    config={{ responsive: true, displayModeBar: false }}
+                    style={{ width: '100%', height: '100%' }}
+                  />
+                </div>
+                <div className="flex items-start gap-2 p-3 bg-[#EFEDF7] rounded-lg text-sm text-[#5A4E8A]">
+                  <Sparkles size={16} className="mt-0.5 shrink-0" />
+                  <div>
+                    <p>
+                      <span className="font-medium">Agent reasoning:</span> {refined.reasoning}
+                    </p>
+                    <p className="text-xs mt-1">
+                      Confidence: <span className="font-mono">{((refined.confidence ?? 0) * 100).toFixed(0)}%</span>
+                      {' '}· Adjusted total:{' '}
+                      <span className="font-mono">
+                        {(refined.adjusted_forecast || [])
+                          .reduce((a: number, b: number) => a + (Number(b) || 0), 0)
+                          .toFixed(1)}{' '}
+                        kWh
+                      </span>
+                      {' '}vs pvlib base{' '}
+                      <span className="font-mono">{totalGeneration().toFixed(1)} kWh</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Temperature Chart */}

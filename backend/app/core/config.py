@@ -75,10 +75,14 @@ class Settings(BaseSettings):
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
 
-    # Ollama AI
+    # Ollama AI — 2b quant keeps CPU-only inference tolerable; larger
+    # variants (qwen3.5:4b, qwen3.5) trade speed for forecast quality.
+    # With an ollama.com subscription (`ollama signin`), set
+    # OLLAMA_MODEL/FORECAST_MODEL to a cloud tag (e.g. qwen3.5:397b-cloud)
+    # for fast remote inference with no local download.
     OLLAMA_HOST: str = "http://localhost:11434"
-    OLLAMA_MODEL: str = "qwen3.5"
-    FORECAST_MODEL: str = "qwen3.5"
+    OLLAMA_MODEL: str = "qwen3.5:2b"
+    FORECAST_MODEL: str = "qwen3.5:2b"
 
     # Optimization
     SOLVER_NAME: str = "cbc"  # Options: cbc, glpk, gurobi, cplex
