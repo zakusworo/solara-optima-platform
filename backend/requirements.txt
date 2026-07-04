@@ -1,7 +1,7 @@
 # Core Backend Dependencies
-fastapi==0.109.0
+fastapi==0.139.0
 uvicorn[standard]==0.27.0
-python-multipart==0.0.6
+python-multipart==0.0.32
 pydantic==2.5.3
 pydantic-settings==2.1.0
 
@@ -14,13 +14,13 @@ numpy==1.26.3
 # Solar PV & Weather
 pvlib==0.10.2
 pandas==2.1.4
-requests==2.31.0
-aiohttp==3.9.1
+requests==2.34.2
+aiohttp==3.14.1
 
 # AI/ML Forecasting
 ollama==0.1.6
 httpx>=0.25.2
-scikit-learn==1.4.0
+scikit-learn==1.5.0
 prophet==1.1.5
 
 # Database
@@ -33,12 +33,12 @@ redis==5.0.1
 celery==5.3.6
 
 # Utilities
-python-dotenv==1.0.0
+python-dotenv==1.2.2
 loguru==0.7.2
 pyyaml==6.0.1
-python-jose[cryptography]==3.3.0
+python-jose[cryptography]==3.4.0
 passlib[bcrypt]==1.7.4
 
 # Testing
-pytest==7.4.4
+pytest==9.1.1
 pytest-asyncio==0.23.3
