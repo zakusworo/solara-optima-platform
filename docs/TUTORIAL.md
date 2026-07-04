@@ -1,85 +1,27 @@
-# Solara Optima Platform — Step-by-Step Tutorial
+# Solara Optima Platform — Beginner's Tutorial
 
-A complete walkthrough: from a fresh machine to a running platform with real
-optimization results. Every step includes the expected output so you can
-verify you are on track.
+This guide walks you through the web app from the moment you start it until
+you get your first optimization result. No programming knowledge needed —
+every step happens in the browser, and each step tells you what you should
+see before moving on.
 
-**What you will end up with**
-
-- A FastAPI backend on `http://localhost:8000` (interactive API docs at `/docs`)
-- A React dashboard on `http://localhost:3000`
-- A solved Unit Commitment / Economic Dispatch optimization with solar + battery
-- A marketplace estimate for a rooftop solar system (Indonesian market, IDR)
+**What the app does, in plain words:** you describe a small power system —
+solar panels, a battery, and one or more fuel generators — plus how much
+electricity you need each hour of the day. The app then calculates the
+cheapest way to run everything: when to use solar, when to charge or
+discharge the battery, and when to turn generators on or off.
 
 ---
 
-## 1. Prerequisites
+## 1. Start the web app
 
-| Requirement | Minimum version | Check with |
-|---|---|---|
-| Git | any recent | `git --version` |
-| Python | 3.12+ | `python3 --version` |
-| Node.js | 20+ | `node --version` |
-| npm | 9+ | `npm --version` |
+> Not installed yet? Follow the install steps in `QUICKSTART.md` first
+> (clone, backend `pip install`, frontend `npm install`). You only do that
+> once.
 
-About 2 GB of free disk space is needed for dependencies.
+Open two terminals in the project folder.
 
-> **Note:** PostgreSQL, Redis, and Ollama are **not** required for this
-> tutorial. They are only used by the optional Docker deployment (Section 9).
-
-## 2. Clone the repository
-
-```bash
-git clone https://github.com/zakusworo/solara-optima-platform
-cd solara-optima-platform
-```
-
-Expected: the folder contains `backend/`, `frontend/`, `data/`, `docs/`,
-`docker-compose.yml`, and `QUICKSTART.md`.
-
-## 3. Set up the backend
-
-```bash
-cd backend
-python3 -m venv venv
-source venv/bin/activate          # Windows: venv\Scripts\activate
-pip install -r requirements-minimal.txt
-cp .env.example .env
-```
-
-The install takes a few minutes (pvlib, pandas, numpy, PuLP with the bundled
-CBC solver).
-
-**Important — edit `.env` before starting.** The example file includes three
-`POSTGRES_*` variables that are only used by Docker Compose. The app rejects
-unknown variables, so comment them out:
-
-```bash
-sed -i 's/^POSTGRES_/# POSTGRES_/' .env
-```
-
-If you skip this you will see on startup:
-
-```
-pydantic_core._pydantic_core.ValidationError: 3 validation errors for Settings
-POSTGRES_USER
-  Extra inputs are not permitted ...
-```
-
-## 4. Set up the frontend
-
-```bash
-cd ../frontend
-npm install
-```
-
-Expected: finishes with `added ~650 packages` and **0 vulnerabilities**.
-
-## 5. Start both servers
-
-Use two terminals (or run each in the background).
-
-**Terminal 1 — backend:**
+**Terminal 1 — the engine (backend):**
 
 ```bash
 cd backend
@@ -87,154 +29,165 @@ source venv/bin/activate
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-Expected output ends with:
+Wait for the line: `Application startup complete.`
 
-```
-INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-INFO:     Application startup complete.
-```
-
-**Terminal 2 — frontend:**
+**Terminal 2 — the website (frontend):**
 
 ```bash
 cd frontend
 npm run dev
 ```
 
-Expected output:
+Wait for: `Local: http://localhost:3000/`
 
-```
-VITE ready in ~1s
-➜  Local:   http://localhost:3000/
-```
+Now open **http://localhost:3000** in your browser. You should see the
+**Dashboard** with a "System Ready" badge, a Solar Resource Assessment for
+Bandung, and a monthly irradiance chart. If the panels show errors instead,
+the backend isn't running — check Terminal 1.
 
-## 6. Verify everything is up
+## 2. Know your way around
 
-```bash
-curl http://localhost:8000/health
-```
+The sidebar has six pages. You will use them in this order:
 
-Expected:
+| Page | What it's for |
+|---|---|
+| **Dashboard** | Overview: solar resource at your location, quick links |
+| **Settings** | Where your site is (city, coordinates) and market prices |
+| **Solar Forecast** | Preview how much energy your solar panels would make |
+| **Generators** | Build your equipment list: solar size, battery, generators |
+| **Optimization** | Run the calculation and see the results |
+| **Marketplace** | Bonus: rooftop solar cost estimate for your electricity bill |
 
-```json
-{"status":"ok","services":{"api":"running","optimization":"ready","forecasting":"ready"}}
-```
+## 3. Set your location (Settings)
 
-Then open **http://localhost:3000** in your browser — the Dashboard loads with
-the Bandung location pre-configured (-6.9147°S, 107.6098°E, 768 m).
-The interactive API reference lives at **http://localhost:8000/docs**.
+1. Click **Settings** in the sidebar.
+2. The app comes pre-configured for **Bandung, Indonesia**. If that's fine,
+   skip to step 4.
+3. To change it: type a city name in the location search box, pick a result,
+   and the **Latitude**, **Longitude**, **Altitude** and timezone fill in
+   automatically. Click **Save**.
+4. Notice the **Optimal PV Tilt** and **Optimal PV Azimuth** hints — the app
+   knows that in the southern hemisphere panels should face north (azimuth
+   0°).
 
-## 7. Get your first results
+You can leave everything else (currency, solver) at its defaults: prices in
+Indonesian Rupiah and the free CBC solver.
 
-### 7a. Run an optimization from the UI
+## 4. Configure the PV system (solar panels + battery)
 
-1. Open **http://localhost:3000/optimize**.
-2. The form is pre-filled with a 24-hour load profile, a generator fleet,
-   100 kW of PV, and a 50 kWh / 25 kW battery.
+Go to the **Generators** page. Despite the name, this page holds your whole
+equipment list, including solar and battery. Find the **System
+Configuration** fields:
+
+| Field | Meaning | Good starter value |
+|---|---|---|
+| **Solar PV (kW)** | Total size of your solar array. 1 kW ≈ 2 large panels. | `100` |
+| **Battery (kWh)** | How much energy the battery can store. | `50` |
+| **Battery Power (kW)** | How fast the battery can charge/discharge. | `25` |
+
+**Optional — preview your solar production first.** Open the
+**Solar Forecast** page, set **PV Capacity (kW)** to the same number, and
+click the forecast button. You'll see a curve that is zero at night, rises
+after sunrise, and peaks around midday.
+
+Expected for 100 kW in Bandung on a clear day: roughly **500–540 kWh** over
+the day with a midday peak near **73 kW**. You can also browse real panel
+models under **PV Module Selection** (by manufacturer or technology) — for a
+first run the defaults are fine.
+
+## 5. Configure the generators
+
+Still on the **Generators** page. Your **Generator Fleet** list is what the
+optimizer will schedule — it needs at least one generator, because solar
+alone can't cover the night.
+
+The easy way — use a ready-made setup:
+
+1. Look at **Indonesian Market Presets** (typical PLN configurations, e.g.
+   small island or industrial microgrids) or **Generator Templates**
+   (Diesel, Natural Gas, Coal, Biomass, Biogas).
+2. Click one to add it to your fleet.
+
+Or click **Add Custom Generator** and fill in the fields:
+
+| Field | Plain-language meaning |
+|---|---|
+| **Generator Name** | Any label, e.g. "Gas Turbine 1" |
+| **Fuel Type** | Diesel, natural gas, coal, biomass, biogas |
+| **Min / Max Output (kW)** | The range it can run at while on |
+| **Ramp Rate** | How fast it can change output per hour |
+| **Fuel Cost (Rp/kWh)** | What one kWh of its electricity costs |
+| **Emissions** | CO₂ per kWh, used for the emissions total |
+
+**One rule of thumb before you continue:** add up the **Max Output** of all
+your generators. It must cover your highest evening demand *on its own*,
+because the sun is down then and the battery only helps a little. For the
+default load (peak 170 kW), make sure your fleet totals **at least ~180 kW**
+— e.g. one gas turbine of 200 kW, or a 100 kW turbine plus an 80 kW diesel.
+
+## 6. Run the optimization and read the results
+
+1. Open the **Optimization** page. Under **System Configuration** you'll see
+   the location, solver (CBC MILP), and the PV/battery values you set —
+   they carry over from the Generators page automatically.
+2. Check the **Hourly Load Editor (kW)** — 24 bars, one per hour, showing
+   how much electricity you need. The default profile is a typical day:
+   low at night, a morning rise, and an evening peak. Drag or type to edit,
+   or keep the defaults.
 3. Click **Run Optimization**.
 
-Expected result: solver status **Optimal**, a total cost in IDR
-(≈ Rp 3–4 million for the default scenario), and charts showing the generator
-schedule, solar output, and battery charge/discharge over 24 hours.
+After a moment (usually under a second) the results appear:
 
-### 7b. Run the same optimization from the command line
+- **Status: Optimal** — this word matters. *Optimal* means the app found the
+  cheapest possible plan.
+- **Total Cost** — the full day's running cost. For the default setup expect
+  roughly **Rp 3–4 million**.
+- **Solve Time** — how long the math took.
 
-```bash
-curl -X POST http://localhost:8000/api/v1/optimize/run-with-solar \
-  -H "Content-Type: application/json" \
-  -d '{
-    "load_profile": [80,75,70,65,60,65,85,100,120,130,125,120,115,110,115,125,140,160,170,165,150,130,110,95],
-    "generators": [{
-      "generator_id": 1, "name": "Gas Turbine",
-      "min_output": 20, "max_output": 200,
-      "ramp_up": 100, "ramp_down": 100,
-      "min_uptime": 2, "min_downtime": 2,
-      "initial_status": 1, "initial_output": 50,
-      "startup_cost": 500000, "shutdown_cost": 0,
-      "no_load_cost": 50000, "fuel_cost": 800,
-      "emissions_rate": 0.45
-    }],
-    "pv_system_capacity": 100,
-    "bess_capacity": 50,
-    "bess_power_rating": 25
-  }'
-```
+Then three charts, hour by hour:
 
-Expected: HTTP 200 with `"status": "Optimal"`, `"total_cost"` ≈ 3,000,000 IDR,
-and hour-by-hour `generator_schedules`, `solar_output`, and
-`battery_operation` arrays. Solve time is well under a second.
+- **Generation Stack** — colored bars showing which generator produces how
+  much, each hour. You should see generators throttle down around midday
+  (solar takes over) and ramp up for the evening peak.
+- **Solar Generation** — the solar curve; zero at night, peak near noon.
+- **Battery Storage** — charging (usually midday, from cheap solar) and
+  discharging (usually evening, to shave the expensive peak).
 
-> The generator must be able to cover the evening peak (170 in this profile)
-> when solar is zero — that is why `max_output` is 200 here. A 100-unit
-> generator makes this scenario infeasible.
+**Reading the story in the numbers:** the optimizer uses free solar whenever
+it can, stores the midday surplus in the battery, releases it in the
+evening, and only burns fuel for what's left. That's the whole point of
+the platform — and you can now test "what if" scenarios: bigger battery?
+More solar? Cheaper fuel? Change a number and run again.
 
-### 7c. Get a solar forecast
+### If the status says "Infeasible"
 
-```bash
-curl "http://localhost:8000/api/v1/forecast/solar?capacity=100&hours=24&weather_source=clearsky"
-```
+*Infeasible* means: with this equipment, the demand physically cannot be met
+in some hour — usually the evening peak. Fix it by raising a generator's
+**Max Output**, adding another generator, or lowering the evening bars in
+the load editor. Then run again.
 
-Expected: 24 hourly generation values for a 100 kW system in Bandung. On a
-clear-sky day this totals roughly 500–540 kWh with a midday peak around 73 kW.
+## 7. Bonus: what would rooftop solar cost me? (Marketplace)
 
-### 7d. Get a rooftop solar estimate (Marketplace)
+1. Open the **Marketplace** page.
+2. Enter a monthly PLN electricity bill — try **Rp 1,500,000** with the
+   residential tariff — and click **Estimate**.
 
-Open **http://localhost:3000/marketplace**, enter a monthly PLN bill
-(e.g. Rp 1,500,000, residential tariff), and click **Estimate**.
+Expected result: a recommended system around **4.8 kWp**, investment of
+about **Rp 72 million**, the yearly savings, payback time (≈ 7–8 years),
+and three ways to pay (cash, green loan, or a zero-upfront-cost PPA), plus
+matched installers and the CO₂ you'd avoid.
 
-Expected result for that input: a recommended system of ≈ **4.8 kWp**,
-CAPEX ≈ **Rp 72 million**, yearly savings, payback period, IRR/NPV, three
-financing options (cash / green loan / zero-CapEx PPA), CO₂ avoided, and a
-list of matched installers.
+## 8. Quick fixes
 
-## 8. Run the smoke tests
-
-The backend ships three script-style smoke tests. Run them directly with
-Python (not via pytest — they are scripts, not pytest suites):
-
-```bash
-cd backend
-source venv/bin/activate
-python test_api.py             # core: optimizer + solar forecast
-python test_marketplace.py     # financial model invariants
-python test_marketplace_api.py # marketplace API end-to-end
-```
-
-Expected — each exits 0 and prints its checks, e.g.:
-
-```
-✓ Optimization completed!
-  Total cost: Rp 3,391,295
-✓ Solar forecast generated
-  Total generation: 535.1 kWh
-  Peak power: 72.78 kW
-...
-All Marketplace API tests passed
-```
-
-## 9. Optional: full Docker deployment
-
-The compose stack adds PostgreSQL, Redis, and Ollama (for the AI-forecast
-endpoints).
-
-```bash
-# in backend/.env: set POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
-# (uncomment the lines you commented out in step 3)
-docker compose up --build -d
-```
-
-Same URLs as dev mode: frontend on :3000, backend on :8000.
-
-## 10. Troubleshooting
-
-| Symptom | Cause | Fix |
+| What you see | What it means | What to do |
 |---|---|---|
-| Backend crashes at startup with `ValidationError ... POSTGRES_USER Extra inputs are not permitted` | Docker-only variables left in `.env` | Comment out the `POSTGRES_*` lines (step 3) |
-| `422 Unprocessable Entity` on `/optimize/run` | Generator payload missing `shutdown_cost` / `no_load_cost` | Include both fields on every generator |
-| Solver returns `Infeasible` | Fleet cannot cover peak load when solar is zero | Raise `max_output`, add generators, or increase battery power |
-| Port 8000 or 3000 already in use | Another process bound the port | `uvicorn ... --port 8001` / `npm run dev -- --port 3001` |
-| UI loads but every panel shows errors | Backend not running | Start the backend first; the frontend proxies `/api/*` to :8000 |
+| Every panel shows an error | The backend (Terminal 1) isn't running | Start it, then refresh the browser |
+| "No generators in fleet" when you click Run | The optimizer has nothing to schedule | Add a generator on the **Generators** page (step 5) |
+| Status: **Infeasible** | Equipment can't cover the demand peak | See the fix box in step 6 |
+| Solar forecast is all zeros | Forecast window is at night | Use a 24 h horizon |
+| Page won't load at :3000 | Frontend (Terminal 2) isn't running | Start it and wait for the "Local:" line |
 
 ---
 
-*Tested end-to-end on Linux (Fedora), Python 3.14, Node 22 — July 2026.*
+*Tested end-to-end on Linux, Python 3.14, Node 22 — July 2026. For
+installation, API examples, and Docker deployment, see `QUICKSTART.md`.*
