@@ -391,13 +391,21 @@ async def generate_ai_load_forecast(
     context: Optional[Dict] = None,
     model: Optional[str] = None,
 ) -> Dict:
-    """Generate AI load forecast"""
+    """Generate AI load forecast without blocking the event loop.
+
+    Ollama inference is synchronous and can take seconds (cloud) to minutes
+    (CPU-only local models); run it in the threadpool so concurrent requests
+    (e.g. /health probes) keep being served.
+    """
+    from starlette.concurrency import run_in_threadpool
 
     service = AIForecastingService(model=model)
 
     # Check availability
-    if not service.check_availability():
+    if not await run_in_threadpool(service.check_availability):
         logger.warning("Ollama not available, using fallback")
         return service._fallback_forecast(historical_data, horizon_hours)
 
-    return service.generate_load_forecast(historical_data, horizon_hours, context)
+    return await run_in_threadpool(
+        service.generate_load_forecast, historical_data, horizon_hours, context
+    )

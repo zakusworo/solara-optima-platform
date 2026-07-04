@@ -19,7 +19,7 @@ router = APIRouter()
 
 
 @router.get("/load", response_model=APIResponse)
-async def get_ai_load_forecast(
+def get_ai_load_forecast(
     hours: int = 24,
     model: Optional[str] = None,
 ):
@@ -119,7 +119,7 @@ async def get_custom_ai_load_forecast(
 
 
 @router.get("/solar/refine", response_model=APIResponse)
-async def refine_solar_forecast(
+def refine_solar_forecast(
     pvlib_forecast: str = Query(
         ...,
         max_length=_MAX_FORECAST_INPUT_CHARS,
@@ -179,7 +179,7 @@ async def refine_solar_forecast(
 
 
 @router.get("/compare", response_model=APIResponse)
-async def compare_forecasting_methods(
+def compare_forecasting_methods(
     hours: int = 24,
 ):
     """
@@ -226,7 +226,7 @@ async def compare_forecasting_methods(
 
 
 @router.get("/status", response_model=APIResponse)
-async def get_ai_status():
+def get_ai_status():
     """Check AI forecasting service status"""
 
     service = AIForecastingService()
