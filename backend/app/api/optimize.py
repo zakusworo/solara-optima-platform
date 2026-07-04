@@ -153,9 +153,7 @@ async def run_optimization_with_solar(request: OptimizationRequest):
             # Defaulting start to "now" would cyclically shift solar relative to
             # load — solar landing at night and zero at midday.
             tz = ZoneInfo(settings.TIMEZONE)
-            start = datetime.now(tz).replace(
-                hour=0, minute=0, second=0, microsecond=0
-            )
+            start = datetime.now(tz).replace(hour=0, minute=0, second=0, microsecond=0)
             end = start + timedelta(hours=horizon_hours)
 
             forecast = solar_service.generate_forecast(

@@ -117,7 +117,7 @@ try:
     )
     print(f"✓ Solar forecast generated")
     print(f"  Total generation: {forecast['total_generation']:.1f} kWh")
-    print(f"  Peak power: {max(forecast['generation'])/1000:.2f} kW")
+    print(f"  Peak power: {max(forecast['generation']):.2f} kW")
     print(f"  Location: Bandung ({service.latitude}°S, {service.longitude}°E)")
 except Exception as e:
     print(f"✗ Solar forecast failed: {e}")

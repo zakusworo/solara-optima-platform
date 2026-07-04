@@ -28,8 +28,8 @@ from app.models.marketplace_schemas import (
     SolarEstimateRequest,
 )
 from app.models.schemas import APIResponse
-from app.services import finance
 from app.services import carbon_credits as cc
+from app.services import finance
 from app.services.leads_store import leads_store, quote_rate_limiter
 
 router = APIRouter()
@@ -51,10 +51,20 @@ def _load_json(path, key: str) -> tuple:
         raw = json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError:
         logger.error(f"Marketplace data file missing: {path}")
-        return [], {"verified": False, "source": None, "as_of": None, "note": "file missing"}
+        return [], {
+            "verified": False,
+            "source": None,
+            "as_of": None,
+            "note": "file missing",
+        }
     except json.JSONDecodeError as e:
         logger.error(f"Marketplace data file is not valid JSON ({path}): {e}")
-        return [], {"verified": False, "source": None, "as_of": None, "note": "invalid JSON"}
+        return [], {
+            "verified": False,
+            "source": None,
+            "as_of": None,
+            "note": "invalid JSON",
+        }
     items = raw.get(key, [])
     provenance = {
         "verified": bool(items) and all(it.get("verified", False) for it in items),
@@ -98,7 +108,11 @@ async def estimate(request: SolarEstimateRequest):
             detail=f"Unknown tariff_code '{request.tariff_code}'. See /api/v1/marketplace/tariffs.",
         )
     if not any(
-        [request.monthly_bill_idr, request.monthly_consumption_kwh, request.desired_capacity_kwp]
+        [
+            request.monthly_bill_idr,
+            request.monthly_consumption_kwh,
+            request.desired_capacity_kwp,
+        ]
     ):
         raise HTTPException(
             status_code=400,
@@ -134,9 +148,7 @@ def _filter_installers(
     return matches
 
 
-def _filter_financiers(
-    segment: str, capex_idr: Optional[float]
-) -> List[Dict]:
+def _filter_financiers(segment: str, capex_idr: Optional[float]) -> List[Dict]:
     matches = []
     for fin in _financiers:
         if segment not in fin.get("segments", []):
@@ -231,7 +243,9 @@ async def quote_request(request: QuoteRequest, req: Request):
     if request.preferred_financing:
         lead["preferred_financing"] = request.preferred_financing.value
     leads_store.append(lead)
-    logger.info(f"New quote request: {lead['lead_id']} ({request.email}) from {client_ip}")
+    logger.info(
+        f"New quote request: {lead['lead_id']} ({request.email}) from {client_ip}"
+    )
     return APIResponse(
         success=True,
         data={"lead_id": lead["lead_id"]},
@@ -296,7 +310,11 @@ async def portfolio():
     total_bill = stats["aggregated_monthly_bill_idr"]
 
     # Approximate portfolio economics from aggregated capacity
-    total_capex = total_capacity * finance.capex_per_kwp(total_capacity) if total_capacity > 0 else 0.0
+    total_capex = (
+        total_capacity * finance.capex_per_kwp(total_capacity)
+        if total_capacity > 0
+        else 0.0
+    )
     annual_gen = total_capacity * finance.DEFAULT_SPECIFIC_YIELD
     annual_co2_t = annual_gen * finance.GRID_EMISSION_FACTOR_KG_PER_KWH / 1000.0
     carbon_block = cc.estimate(
@@ -329,4 +347,6 @@ async def carbon_credits_estimate(annual_generation_kwh: float = Query(..., ge=0
         annual_generation_kwh,
         emission_factor_kg_per_kwh=finance.GRID_EMISSION_FACTOR_KG_PER_KWH,
     )
-    return APIResponse(success=True, data=block, message="Indicative carbon-credit estimate")
+    return APIResponse(
+        success=True, data=block, message="Indicative carbon-credit estimate"
+    )

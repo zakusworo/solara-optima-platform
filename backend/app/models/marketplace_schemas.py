@@ -49,7 +49,8 @@ class SolarEstimateRequest(BaseModel):
     )
 
     tariff_code: str = Field(
-        "B-2/TR-6600-200k", description="PLN tariff group code (see /marketplace/tariffs)"
+        "B-2/TR-6600-200k",
+        description="PLN tariff group code (see /marketplace/tariffs)",
     )
     segment: CustomerSegment = CustomerSegment.commercial
     roof_area_m2: Optional[float] = Field(
@@ -147,7 +148,9 @@ class MatchRequest(BaseModel):
     capacity_kwp: float = Field(..., gt=0)
     capex_idr: Optional[float] = Field(None, ge=0)
     segment: CustomerSegment = CustomerSegment.commercial
-    region: Optional[str] = Field(None, description="Province name, or omit for nationwide")
+    region: Optional[str] = Field(
+        None, description="Province name, or omit for nationwide"
+    )
     limit: int = Field(5, ge=1, le=20)
 
 

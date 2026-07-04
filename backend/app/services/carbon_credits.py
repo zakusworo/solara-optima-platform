@@ -42,14 +42,20 @@ def estimate(
     eligibility_factor: Optional[float] = None,
 ) -> dict:
     """Indicative I-REC / avoided-CO2 / credit-revenue estimate for a year of solar."""
-    irec_price = irec_price_usd if irec_price_usd is not None else settings.IREC_PRICE_USD
+    irec_price = (
+        irec_price_usd if irec_price_usd is not None else settings.IREC_PRICE_USD
+    )
     fx = usd_idr if usd_idr is not None else settings.USD_IDR_RATE
     ef = (
         emission_factor_kg_per_kwh
         if emission_factor_kg_per_kwh is not None
         else EMISSION_FACTOR_KG_PER_KWH
     )
-    elig = eligibility_factor if eligibility_factor is not None else IREC_ELIGIBILITY_FACTOR
+    elig = (
+        eligibility_factor
+        if eligibility_factor is not None
+        else IREC_ELIGIBILITY_FACTOR
+    )
 
     if not annual_generation_kwh or annual_generation_kwh <= 0:
         return {

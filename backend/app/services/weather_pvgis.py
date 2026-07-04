@@ -66,11 +66,15 @@ def _parse_hourly(hourly: List[Dict]) -> Optional[pd.DataFrame]:
         if tval is None:
             continue
         try:
-            ts = pd.to_datetime(str(tval), format="%Y%m%d:%H%M", utc=True, errors="raise")
+            ts = pd.to_datetime(
+                str(tval), format="%Y%m%d:%H%M", utc=True, errors="raise"
+            )
         except (ValueError, TypeError):
             # Some PVGIS responses use "YYYYMMDD:HH:MM" — try a flexible parse.
             try:
-                ts = pd.to_datetime(str(tval).replace(":", "", 1), utc=True, errors="raise")
+                ts = pd.to_datetime(
+                    str(tval).replace(":", "", 1), utc=True, errors="raise"
+                )
             except Exception:
                 continue
         rows.append(
@@ -105,7 +109,9 @@ def _fetch(latitude: float, longitude: float) -> Optional[pd.DataFrame]:
         try:
             resp = requests.get(url, params=params, timeout=settings.PVGIS_TIMEOUT_S)
             if resp.status_code != 200:
-                logger.debug(f"PVGIS {db} returned {resp.status_code} for ({latitude},{longitude})")
+                logger.debug(
+                    f"PVGIS {db} returned {resp.status_code} for ({latitude},{longitude})"
+                )
                 continue
             data = resp.json()
             outputs = data.get("outputs") or {}

@@ -104,7 +104,7 @@ jobs:
       # Pin to a tagged release so the action body can't be retroactively changed.
       # Tag list: https://github.com/aquasecurity/trivy-action/tags
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@v0.30.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: 'fs'
           scan-ref: '.'

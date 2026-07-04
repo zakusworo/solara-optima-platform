@@ -11,7 +11,7 @@ are NOT a financial guarantee.
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from loguru import logger
 
@@ -22,22 +22,22 @@ from app.models.marketplace_schemas import (
     SolarEstimateRequest,
     SolarEstimateResult,
 )
-from app.services.solar_forecast import SolarForecastService
 from app.services import carbon_credits as cc
+from app.services.solar_forecast import SolarForecastService
 
 # --- Techno-economic assumptions (Indonesia, illustrative; override via request) ---
 SYSTEM_LIFETIME_YEARS = 25
-PANEL_DEGRADATION_PER_YEAR = 0.005          # 0.5%/yr output loss
-OM_COST_PCT_OF_CAPEX = 0.01                 # 1%/yr operations & maintenance
-TARIFF_ESCALATION_PER_YEAR = 0.03           # PLN tariff drift
-DISCOUNT_RATE = 0.10                        # NPV discount rate
-GRID_EMISSION_FACTOR_KG_PER_KWH = 0.85      # Indonesia grid (JAMALI interconnection)
-CLEARSKY_TO_REAL_DERATE = 0.72              # clear-sky annual -> weather-adjusted
-DEFAULT_SPECIFIC_YIELD = 1450.0             # kWh/kWp/yr fallback
-PANEL_WATT = 550                            # W per module (panel-count estimate)
-AREA_PER_KWP_M2 = 7.0                       # rooftop area per kWp
-CO2_PER_TREE_KG_PER_YEAR = 21.0            # sequestration equivalent
-EXPORT_PRICE_IDR_PER_KWH = 0.0              # PLN export credit removed (Permen ESDM 2/2024)
+PANEL_DEGRADATION_PER_YEAR = 0.005  # 0.5%/yr output loss
+OM_COST_PCT_OF_CAPEX = 0.01  # 1%/yr operations & maintenance
+TARIFF_ESCALATION_PER_YEAR = 0.03  # PLN tariff drift
+DISCOUNT_RATE = 0.10  # NPV discount rate
+GRID_EMISSION_FACTOR_KG_PER_KWH = 0.85  # Indonesia grid (JAMALI interconnection)
+CLEARSKY_TO_REAL_DERATE = 0.72  # clear-sky annual -> weather-adjusted
+DEFAULT_SPECIFIC_YIELD = 1450.0  # kWh/kWp/yr fallback
+PANEL_WATT = 550  # W per module (panel-count estimate)
+AREA_PER_KWP_M2 = 7.0  # rooftop area per kWp
+CO2_PER_TREE_KG_PER_YEAR = 21.0  # sequestration equivalent
+EXPORT_PRICE_IDR_PER_KWH = 0.0  # PLN export credit removed (Permen ESDM 2/2024)
 
 # Self-consumption ratio & default bill-offset target by segment
 SELF_CONSUMPTION_BY_SEGMENT = {
@@ -55,7 +55,7 @@ DEFAULT_TARGET_OFFSET_BY_SEGMENT = {
 DEFAULT_LOAN_INTEREST = 0.115
 DEFAULT_LOAN_TENOR_MONTHS = 84
 DEFAULT_DOWN_PAYMENT_PCT = 0.10
-PPA_DISCOUNT_VS_TARIFF = 0.15               # PPA price this fraction below grid tariff
+PPA_DISCOUNT_VS_TARIFF = 0.15  # PPA price this fraction below grid tariff
 PPA_ESCALATION_PER_YEAR = 0.02
 PPA_TERM_YEARS = 20
 
@@ -147,7 +147,10 @@ def estimate_specific_yield(
             # PVGIS branch returns a full 8760-h TMY; a clear-sky fallback
             # returns ~24 h for the equinox day — distinguish by row count.
             if len(forecast["timestamps"]) > 100 and forecast["total_generation"] > 0:
-                return round(forecast["total_generation"], 1), "PVGIS satellite TMY (real irradiance)"
+                return (
+                    round(forecast["total_generation"], 1),
+                    "PVGIS satellite TMY (real irradiance)",
+                )
             # PVGIS unavailable -> generate_forecast already fell back to a
             # clear-sky equinox day; annualize it with the weather derate.
             annual = forecast["total_generation"] * 365 * CLEARSKY_TO_REAL_DERATE
@@ -177,7 +180,9 @@ def estimate_specific_yield(
 # --------------------------------------------------------------------------- #
 # Main analysis
 # --------------------------------------------------------------------------- #
-def analyze(request: SolarEstimateRequest, tariff_idr_per_kwh: float) -> SolarEstimateResult:
+def analyze(
+    request: SolarEstimateRequest, tariff_idr_per_kwh: float
+) -> SolarEstimateResult:
     """Size the system and run the full financing + impact analysis."""
 
     segment = request.segment.value
@@ -377,9 +382,17 @@ def _build_financing_options(
     )
 
     # --- Bank loan (amortizing) ---
-    rate = request.loan_interest_rate if request.loan_interest_rate is not None else DEFAULT_LOAN_INTEREST
+    rate = (
+        request.loan_interest_rate
+        if request.loan_interest_rate is not None
+        else DEFAULT_LOAN_INTEREST
+    )
     tenor = request.loan_tenor_months or DEFAULT_LOAN_TENOR_MONTHS
-    down_pct = request.down_payment_pct if request.down_payment_pct is not None else DEFAULT_DOWN_PAYMENT_PCT
+    down_pct = (
+        request.down_payment_pct
+        if request.down_payment_pct is not None
+        else DEFAULT_DOWN_PAYMENT_PCT
+    )
     down = capex * down_pct
     principal = capex - down
     monthly = annuity_payment(principal, rate, tenor)
@@ -405,9 +418,11 @@ def _build_financing_options(
             year1_net_saving_idr=round(loan_cf[1]),
             lifetime_net_saving_idr=round(loan_cum[-1]),
             payback_years=payback_from_cumulative(loan_cum),
-            irr_pct=(lambda v: round(v * 100, 1) if v is not None else None)(irr(loan_cf)),
+            irr_pct=(lambda v: round(v * 100, 1) if v is not None else None)(
+                irr(loan_cf)
+            ),
             npv_idr=round(npv(DISCOUNT_RATE, loan_cf)),
-            description=f"{int(down_pct*100)}% down, {rate*100:.1f}%/yr, {int(tenor)}-month tenor. Savings can service the loan.",
+            description=f"{int(down_pct * 100)}% down, {rate * 100:.1f}%/yr, {int(tenor)}-month tenor. Savings can service the loan.",
         )
     )
 
@@ -425,7 +440,9 @@ def _build_financing_options(
             self_y = gen_y * self_cons
         tariff_y = tariff * (1 + TARIFF_ESCALATION_PER_YEAR) ** (year - 1)
         ppa_rate_y = (
-            tariff * (1 - PPA_DISCOUNT_VS_TARIFF) * (1 + PPA_ESCALATION_PER_YEAR) ** (year - 1)
+            tariff
+            * (1 - PPA_DISCOUNT_VS_TARIFF)
+            * (1 + PPA_ESCALATION_PER_YEAR) ** (year - 1)
         )
         if within_term:
             customer_saving = self_y * (tariff_y - ppa_rate_y)
@@ -447,9 +464,9 @@ def _build_financing_options(
             year1_net_saving_idr=round(ppa_cf[1]),
             lifetime_net_saving_idr=round(ppa_cum[-1]),
             payback_years=0.0,  # no upfront cost -> immediate positive
-            irr_pct=None,       # undefined without an initial outflow
+            irr_pct=None,  # undefined without an initial outflow
             npv_idr=round(npv(DISCOUNT_RATE, ppa_cf)),
-            description=f"No upfront cost. Buy solar kWh {int(PPA_DISCOUNT_VS_TARIFF*100)}% below PLN tariff for {PPA_TERM_YEARS} years.",
+            description=f"No upfront cost. Buy solar kWh {int(PPA_DISCOUNT_VS_TARIFF * 100)}% below PLN tariff for {PPA_TERM_YEARS} years.",
         )
     )
 

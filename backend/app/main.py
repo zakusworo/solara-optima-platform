@@ -21,8 +21,8 @@ from app.api import (
 )
 from app.core.config import settings
 from app.core.logging import setup_logging
-from app.services.market_rates import market_rates_service
 from app.services import weather_pvgis
+from app.services.market_rates import market_rates_service
 
 
 def create_application() -> FastAPI:
@@ -79,9 +79,7 @@ def create_application() -> FastAPI:
     application.include_router(
         marketplace.router, prefix="/api/v1/marketplace", tags=["Marketplace"]
     )
-    application.include_router(
-        market.router, prefix="/api/v1/market", tags=["Market"]
-    )
+    application.include_router(market.router, prefix="/api/v1/market", tags=["Market"])
 
     @application.get("/")
     async def root():

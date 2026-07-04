@@ -20,7 +20,7 @@ import os
 import threading
 import time
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from loguru import logger
 
@@ -95,8 +95,8 @@ class LeadsStore:
     def stats(self) -> Dict:
         """Aggregated pipeline stats across all leads."""
         leads = self.all()
-        total_capacity = sum(l.get("capacity_kwp") or 0.0 for l in leads)
-        total_bill = sum(l.get("monthly_bill_idr") or 0.0 for l in leads)
+        total_capacity = sum(lead.get("capacity_kwp") or 0.0 for lead in leads)
+        total_bill = sum(lead.get("monthly_bill_idr") or 0.0 for lead in leads)
         return {
             "total_leads": len(leads),
             "total_capacity_kwp": round(total_capacity, 1),
