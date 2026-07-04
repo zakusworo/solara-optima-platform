@@ -18,7 +18,7 @@ _MAX_FORECAST_VALUES = 168  # one week of hourly data
 router = APIRouter()
 
 
-@router.get("/ai/load", response_model=APIResponse)
+@router.get("/load", response_model=APIResponse)
 async def get_ai_load_forecast(
     hours: int = 24,
     model: Optional[str] = None,
@@ -77,7 +77,7 @@ async def get_ai_load_forecast(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/ai/load/custom", response_model=APIResponse)
+@router.post("/load/custom", response_model=APIResponse)
 async def get_custom_ai_load_forecast(
     historical_data: List[float],
     hours: int = 24,
@@ -118,7 +118,7 @@ async def get_custom_ai_load_forecast(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/ai/solar/refine", response_model=APIResponse)
+@router.get("/solar/refine", response_model=APIResponse)
 async def refine_solar_forecast(
     pvlib_forecast: str = Query(
         ...,
@@ -178,7 +178,7 @@ async def refine_solar_forecast(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/ai/compare", response_model=APIResponse)
+@router.get("/compare", response_model=APIResponse)
 async def compare_forecasting_methods(
     hours: int = 24,
 ):
@@ -225,7 +225,7 @@ async def compare_forecasting_methods(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/ai/status", response_model=APIResponse)
+@router.get("/status", response_model=APIResponse)
 async def get_ai_status():
     """Check AI forecasting service status"""
 

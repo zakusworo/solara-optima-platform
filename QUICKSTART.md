@@ -110,15 +110,17 @@ curl -X POST http://localhost:8000/api/v1/optimize/run-with-solar \
       {
         "generator_id": 1,
         "name": "Gas Turbine",
-        "min_output": 10,
-        "max_output": 100,
-        "ramp_up": 50,
-        "ramp_down": 50,
+        "min_output": 20,
+        "max_output": 200,
+        "ramp_up": 100,
+        "ramp_down": 100,
         "min_uptime": 2,
         "min_downtime": 2,
         "initial_status": 1,
         "initial_output": 50,
         "startup_cost": 500000,
+        "shutdown_cost": 0,
+        "no_load_cost": 50000,
         "fuel_cost": 800,
         "emissions_rate": 0.45
       }
